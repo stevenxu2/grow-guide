@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    // room database
+    alias(libs.plugins.devtoolsKsp)
 }
 
 android {
@@ -43,6 +46,24 @@ dependencies {
 
     // navigation
     implementation(libs.androidx.navigation.compose)
+
+    // location
+    implementation(libs.play.services.location)
+
+    // moshi
+    implementation(libs.moshi.kotlin)
+    implementation(libs.converter.moshi)
+
+    // coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+
+    // room database
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.common)
+    annotationProcessor(libs.androidx.room.room.compiler)
+    ksp(libs.androidx.room.room.compiler)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
