@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.LocationServices
 import kotlin.coroutines.resume
@@ -15,11 +16,11 @@ import kotlin.coroutines.suspendCoroutine
  * Utility object for location-related functions
  */
 object LocationHelper {
-
+    private const val TAG = "LocationHelper"
     /**
      * Checks if location permissions are granted
      */
-    private fun hasLocationPermission(context: Context): Boolean {
+    fun hasLocationPermission(context: Context): Boolean {
         return ActivityCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -36,8 +37,11 @@ object LocationHelper {
     @SuppressLint("MissingPermission")
     suspend fun getCurrentLocation(context: Context): Location? = suspendCoroutine { continuation ->
         if (!hasLocationPermission(context)) {
+            Log.d(TAG, "Location permission not granted")
             continuation.resume(null)
             return@suspendCoroutine
+        } else {
+            Log.d(TAG, "Location permission granted")
         }
 
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)

@@ -65,6 +65,9 @@ dependencies {
     annotationProcessor(libs.androidx.room.room.compiler)
     ksp(libs.androidx.room.room.compiler)
 
+    implementation(libs.logging.interceptor)
+    implementation(libs.androidx.activity.ktx)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

@@ -30,6 +30,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,10 +43,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.xxu.growguide.R
+import com.xxu.growguide.ui.components.WeatherCard
 import com.xxu.growguide.ui.theme.Sunny
+import com.xxu.growguide.viewmodels.WeatherViewModel
 
 @Composable
-fun HomeScreen(navController: NavHostController, innerPadding: PaddingValues, scrollState: ScrollState) {
+fun HomeScreen(
+    navController: NavHostController,
+    innerPadding: PaddingValues,
+    scrollState: ScrollState,
+    weatherViewModel: WeatherViewModel
+) {
+    // Collect weather state from ViewModel
+    val weatherState by weatherViewModel.weatherState.collectAsState()
+
+    // Fetch weather data when the screen is first displayed
+    LaunchedEffect(key1 = true) {
+        weatherViewModel.fetchCurrentWeather()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,7 +71,7 @@ fun HomeScreen(navController: NavHostController, innerPadding: PaddingValues, sc
             .verticalScroll(scrollState)
     ) {
         HomeHeader()
-        WeatherCard()
+        WeatherCard(weatherViewModel, weatherState)
         TodayTasks()
         MyPlants()
         CommunityUpdates()
@@ -102,56 +120,7 @@ fun HomeHeader(){
     Spacer(modifier = Modifier.height(16.dp))
 }
 
-/**
- * Weather information
- */
-@Composable
-fun WeatherCard(){
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.tertiaryContainer)
-            .padding(16.dp),
-    ) {
-        Column(
-            modifier = Modifier.weight(3f)
-        ) {
-            Text(
-                text = "Today's weather",
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "18°C",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                fontSize = 32.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "Sunny, perfect for watering",
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Image(
-                modifier = Modifier.size(80.dp),
-                painter = painterResource(id = R.drawable.ic_sun),
-                contentDescription = "Sun",
-                colorFilter = ColorFilter.tint(Sunny)
-            )
-        }
-    }
 
-    Spacer(modifier = Modifier.height(24.dp))
-}
 
 /**
  * Display user's tasks

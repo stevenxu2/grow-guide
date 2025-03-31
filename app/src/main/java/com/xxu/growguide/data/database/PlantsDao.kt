@@ -1,4 +1,7 @@
 package com.xxu.growguide.data.database
 
-class PlantsDao {
+import androidx.room.Dao
+
+@Dao
+interface PlantsDao {
 }

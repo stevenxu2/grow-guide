@@ -90,3 +90,9 @@ val Gray900 = Color(0xFF212121)
 
 // Weather Color
 val Sunny = Color(0xFFEAAC1E)
+val PartlyCloudy = Color(0xFFFFA500)
+val Cloudy = Color(0xFF808080)
+val Misty = Color(0xFFADD8E6)
+val Rainy = Color(0xFF4682B4)
+val Snowy = Color(0xFFE0FFFF)
+val Stormy = Color(0xFF483D8B)

@@ -1,6 +1,7 @@
 package com.xxu.growguide.api
 
 import android.content.Context
+import android.util.Log
 import com.xxu.growguide.data.database.WeatherDao
 import com.xxu.growguide.data.entity.WeatherEntity
 import com.xxu.growguide.data.models.weather.WeatherData
