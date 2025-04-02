@@ -10,6 +10,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.xxu.growguide.R
 import com.xxu.growguide.destinations.Destination
 
+/**
+ * Purpose: Creates a bottom navigation bar with tabs for Home, Plants, Community, and Profile
+ *
+ * @param navController The NavController used to handle navigation between destinations
+ */
 @Composable
 fun BottomNav(navController: NavController) {
     NavigationBar {

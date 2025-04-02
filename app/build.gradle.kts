@@ -5,6 +5,9 @@ plugins {
 
     // room database
     alias(libs.plugins.devtoolsKsp)
+
+    // firebase
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -64,6 +67,15 @@ dependencies {
     implementation(libs.androidx.room.common)
     annotationProcessor(libs.androidx.room.room.compiler)
     ksp(libs.androidx.room.room.compiler)
+
+    // firebase
+    // Import the Firebase BoM
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.auth)
+
+    // extended icons
+    implementation(libs.androidx.material.icons.extended)
 
     implementation(libs.logging.interceptor)
     implementation(libs.androidx.activity.ktx)

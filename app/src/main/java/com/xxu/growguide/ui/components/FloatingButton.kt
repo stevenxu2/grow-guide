@@ -8,7 +8,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 
 /**
- * A customized floating button component
+ * Purpose: A customized floating action button component
+ *
+ * @param description Content description for accessibility
+ * @param onClick Callback function to be invoked when the button is clicked
  */
 @Composable
 fun FloatingButton(description: String, onClick: () -> Unit) {

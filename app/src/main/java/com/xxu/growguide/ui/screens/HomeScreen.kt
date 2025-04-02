@@ -1,6 +1,5 @@
 package com.xxu.growguide.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -47,6 +46,14 @@ import com.xxu.growguide.ui.components.WeatherCard
 import com.xxu.growguide.ui.theme.Sunny
 import com.xxu.growguide.viewmodels.WeatherViewModel
 
+/**
+ * Purpose: Displays the main home screen with user's garden information
+ *
+ * @param navController Navigation controller for screen navigation
+ * @param innerPadding Padding values from the parent layout
+ * @param scrollState State object for handling scrolling behavior
+ * @param weatherViewModel ViewModel that provides weather data and controls
+ */
 @Composable
 fun HomeScreen(
     navController: NavHostController,
@@ -79,7 +86,7 @@ fun HomeScreen(
 }
 
 /**
- * Display the header of the screen
+ * Purpose: Displays the header section of the home screen with the "My Garden" title
  */
 @Composable
 fun HomeHeader(){
@@ -123,7 +130,7 @@ fun HomeHeader(){
 
 
 /**
- * Display user's tasks
+ * Purpose: Displays a section showing the user's tasks for today and upcoming days
  */
 @Composable
 fun TodayTasks(){
@@ -153,7 +160,10 @@ fun TodayTasks(){
 }
 
 /**
- * Task card to display a task
+ * Purpose: Displays a single task card with checkbox, title, and due date
+ *
+ * @param title The title or description of the task
+ * @param dueText Text indicating when the task is due
  */
 @Composable
 fun TaskCard(title: String, dueText: String) {
@@ -212,7 +222,7 @@ fun TaskCard(title: String, dueText: String) {
 }
 
 /**
- * Display user's plants
+ * Purpose: Displays a section showing the user's plants with their status
  */
 @Composable
 fun MyPlants(){
@@ -298,7 +308,7 @@ fun MyPlants(){
 }
 
 /**
- * Display the newest community posts
+ * Purpose: Displays a section showing recent community posts and updates
  */
 @Composable
 fun CommunityUpdates(){
@@ -345,6 +355,11 @@ fun CommunityUpdates(){
     Spacer(modifier = Modifier.height(24.dp))
 }
 
+/**
+ * Purpose: Displays a single community post with user avatar and title
+ *
+ * @param title The title of the community post
+ */
 @Composable
 fun Post(title: String) {
     Row {

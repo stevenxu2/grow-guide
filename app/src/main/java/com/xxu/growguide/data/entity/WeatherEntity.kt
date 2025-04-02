@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Database entity for storing weather information
+ * Purpose: Database entity for storing weather information
  */
 @Entity(tableName = "weather")
 data class WeatherEntity(
@@ -27,5 +27,5 @@ data class WeatherEntity(
     val precipMm: Double,
     val lastUpdated: String,
 
-    val timestamp: Long
+    val timestamp: Long  // When this entry was last updated
 )

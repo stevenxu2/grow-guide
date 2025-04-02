@@ -37,12 +37,26 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xxu.growguide.R
-import com.xxu.growguide.data.models.OnboardingPage
 import com.xxu.growguide.ui.theme.Sunny
 import kotlinx.coroutines.launch
 
 /**
- * Show the onboarding pages
+ * Purpose: Data class representing a single onboarding page with image, title, and description
+ *
+ * @property image Resource ID for the page image
+ * @property title The title text to display
+ * @property description The description text to display
+ */
+data class OnboardingPage(
+    val image: Int,
+    val title: String,
+    val description: String
+)
+
+/**
+ * Purpose: Displays a multi-page onboarding screen with navigation controls
+ *
+ * @param onFinishOnboarding Callback function to invoke when onboarding is complete
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -192,7 +206,9 @@ fun OnboardingScreen(
 }
 
 /**
- * Show the onboarding page content
+ * Purpose: Renders the content for a single onboarding page
+ *
+ * @param page The OnboardingPage data to display
  */
 @Composable
 fun OnboardingPageContent(page: OnboardingPage) {
@@ -234,6 +250,9 @@ fun OnboardingPageContent(page: OnboardingPage) {
     }
 }
 
+/**
+ * Purpose: Provides a preview of the OnboardingScreen in the Android Studio design view
+ */
 @Composable
 @Preview(showBackground = true)
 fun OnboardingScreenPreview() {

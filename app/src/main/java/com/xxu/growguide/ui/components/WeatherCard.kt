@@ -42,7 +42,10 @@ import com.xxu.growguide.viewmodels.WeatherUiState
 import com.xxu.growguide.viewmodels.WeatherViewModel
 
 /**
- * Weather information
+ * Purpose: Displays weather information based on the current UI state (loading, success, or error)
+ *
+ * @param weatherViewModel ViewModel that provides weather data and refresh functionality
+ * @param weatherState Current UI state containing weather data or error information
  */
 @Composable
 fun WeatherCard(weatherViewModel: WeatherViewModel ,weatherState: WeatherUiState){
@@ -67,7 +70,11 @@ fun WeatherCard(weatherViewModel: WeatherViewModel ,weatherState: WeatherUiState
 }
 
 /**
- * Weather content
+ * Purpose: Displays detailed weather information
+ *
+ * @param modifier Optional Modifier for customizing the layout
+ * @param weatherData The weather data to display
+ * @param onRefresh Optional callback function for refreshing weather data
  */
 @Composable
 private fun WeatherContent(
@@ -131,14 +138,14 @@ private fun WeatherContent(
                 modifier = Modifier.size(80.dp),
                 painter = painterResource(id = iconResId),
                 contentDescription = weatherCondition,
-                colorFilter = ColorFilter.tint(iconTint)
+                // colorFilter = ColorFilter.tint(iconTint)
             )
         }
     }
 }
 
 /**
- * Loading indicator
+ * Purpose: Displays a loading indicator while weather data is being fetched
  */
 @Composable
 private fun LoadingContent() {
@@ -156,7 +163,9 @@ private fun LoadingContent() {
 }
 
 /**
- * Error message display
+ * Purpose: Displays an error message when weather data cannot be loaded
+ *
+ * @param message The error message to display
  */
 @Composable
 private fun ErrorContent(message: String) {
@@ -182,7 +191,11 @@ private fun ErrorContent(message: String) {
 }
 
 /**
- * Returns the weather condition text based on code and time of day
+ * Purpose: Returns the weather condition text based on code and time of day
+ *
+ * @param code The weather condition code from the API
+ * @param isDay Boolean indicating whether it's daytime (true) or nighttime (false)
+ * @return String description of the weather condition
  */
 private fun getWeatherCondition(code: Int, isDay: Boolean): String {
     // This would be more efficient with a map, but using when for readability
@@ -240,7 +253,10 @@ private fun getWeatherCondition(code: Int, isDay: Boolean): String {
 }
 
 /**
- * Returns appropriate icon resource based on weather condition
+ * Purpose: Returns appropriate icon resource based on weather condition code
+ *
+ * @param code The weather condition code from the API
+ * @return Resource ID for the corresponding weather icon
  */
 private fun getWeatherIcon(code: Int): Int {
     return when (code) {
@@ -267,7 +283,10 @@ private fun getWeatherIcon(code: Int): Int {
 }
 
 /**
- * Returns icon tint color based on weather type
+ * Purpose: Returns icon tint color based on weather type
+ *
+ * @param code The weather condition code from the API
+ * @return Color to use for tinting the weather icon
  */
 private fun getWeatherIconTint(code: Int): Color {
     return when (code) {
@@ -283,7 +302,10 @@ private fun getWeatherIconTint(code: Int): Color {
 }
 
 /**
- * Returns watering advice based on weather condition
+ * Purpose: Returns plant watering advice based on weather condition
+ *
+ * @param code The weather condition code from the API
+ * @return String containing watering recommendation
  */
 private fun getWateringAdvice(code: Int): String {
     return when (code) {

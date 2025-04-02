@@ -7,6 +7,7 @@ import com.xxu.growguide.data.entity.WeatherEntity
 import com.xxu.growguide.data.models.weather.WeatherData
 import com.xxu.growguide.data.utils.LocationHelper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -27,9 +28,13 @@ class WeatherManager(
 
     /**
      * Purpose: Get current weather for the user's location
+     *
      * @return Flow of WeatherData from either cache or network
      */
     fun getCurrentWeather(): Flow<WeatherData> = flow {
+        // delay for demonstration
+        delay(1000)
+
         var cachedWeather: WeatherEntity? = null
         try {
             // Check cache first
@@ -60,20 +65,16 @@ class WeatherManager(
             emit(freshWeather)
 
         } catch (e: IOException) {
-            // If network request fails but we have cached data, emit the cached data
-            if (cachedWeather != null) {
-                emit(mapEntityToWeatherData(cachedWeather))
-            } else {
-                throw e
-            }
-        } catch (e: Exception) {
             throw e
         }
     }.flowOn(Dispatchers.IO)
 
 
     /**
-     * Check if the cached data is older than the cache duration
+     * Purpose: Check if the cached data is older than the cache duration
+     *
+     * @param timestamp The timestamp when the cache was created or last updated
+     * @return Boolean indicating whether the cache is outdated (true) or still valid (false)
      */
     private fun isCacheOutdated(timestamp: Long): Boolean {
         val currentTime = System.currentTimeMillis()
@@ -83,7 +84,10 @@ class WeatherManager(
     }
 
     /**
-     * Map WeatherData model to WeatherEntity for database storage
+     * Purpose: Map WeatherData model to WeatherEntity for database storage
+     *
+     * @param weatherData The weather data object from the API response
+     * @return WeatherEntity object ready for database storage
      */
     private fun mapWeatherDataToEntity(weatherData: WeatherData): WeatherEntity {
         return WeatherEntity(
@@ -105,7 +109,10 @@ class WeatherManager(
     }
 
     /**
-     * Map WeatherEntity from database to WeatherData model
+     * Purpose: Map WeatherEntity from database to WeatherData model
+     *
+     * @param entity The weather entity retrieved from the local database
+     * @return WeatherData object with all available weather information
      */
     private fun mapEntityToWeatherData(entity: WeatherEntity): WeatherData {
         val condition = com.xxu.growguide.data.models.weather.Condition(
@@ -151,6 +158,7 @@ class WeatherManager(
             name = entity.locationName,
             country = entity.country,
             region = entity.region,
+
             // Default values for fields we don't cache
             lat = null,
             lon = null,

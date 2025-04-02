@@ -57,9 +57,36 @@ import com.xxu.growguide.viewmodels.WeatherViewModelFactory
 import android.Manifest
 import android.content.pm.PackageManager
 import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
+import com.xxu.growguide.api.PlantManager
+import com.xxu.growguide.auth.AuthManager
+import com.xxu.growguide.ui.screens.AddPlantScreen
+import com.xxu.growguide.ui.screens.LoginScreen
+import com.xxu.growguide.ui.screens.PlantDetailScreen
+import com.xxu.growguide.ui.viewmodels.PlantDetailViewModel
+import com.xxu.growguide.ui.viewmodels.PlantDetailViewModelFactory
+import com.xxu.growguide.ui.viewmodels.PlantsViewModel
+import com.xxu.growguide.ui.viewmodels.PlantsViewModelFactory
+import com.xxu.growguide.viewmodels.AuthViewModel
+import kotlinx.coroutines.launch
 
+/**
+ * Purpose: Main entry point for the application
+ *
+ * Initializes app components
+ */
 class MainActivity : ComponentActivity() {
+    private lateinit var auth: FirebaseAuth
+    private lateinit var authManager: AuthManager
+    private lateinit var authViewModel: AuthViewModel
+
     // Define the permission request handler at the class level
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -80,24 +107,52 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize Firebase Auth
+        auth = Firebase.auth
+
+        // Initialize the AuthManager
+        authManager = AuthManager.getInstance(applicationContext)
+
+        // Initialize the AuthViewModel
+        authViewModel = ViewModelProvider(this)[AuthViewModel::class.java]
+
         // Initialize the database
         val database = AppDatabase.getInstance(applicationContext)
 
-        // Initialize the API services
+        // Create weather view model
         val weatherApiService = API.provideWeatherApiService()
-
-        // Initialize the managers
         val weatherManager = WeatherManager(
             weatherApiService,
             database.weatherDao(),
             applicationContext
         )
-
-        // Create the ViewModels
         val weatherViewModel = ViewModelProvider(
             this,
             WeatherViewModelFactory(weatherManager)
         )[WeatherViewModel::class.java]
+
+        // Create weather view model
+        val plantServiceApi = API.providePlantsApiService()
+        val plantManager = PlantManager(
+            plantServiceApi,
+            database.plantsDao(),
+            applicationContext
+        )
+        val plantsViewModel = ViewModelProvider(
+            this,
+            PlantsViewModelFactory(
+                plantManager,
+                database.plantsDao()
+            )
+        )[PlantsViewModel::class.java]
+        val plantDetailViewModel = ViewModelProvider(
+            this,
+            PlantDetailViewModelFactory(
+                plantManager,
+                database.plantsDao()
+            )
+        )[PlantDetailViewModel::class.java]
+
 
         setContent {
             val themeViewModel: ThemeViewModel = viewModel()
@@ -107,6 +162,9 @@ class MainActivity : ComponentActivity() {
                 //val onboardingComplete = sharedPrefs.getBoolean("onboarding_complete", false)
                 //var showOnboarding by remember { mutableStateOf(!onboardingComplete) }
                 var showOnboarding by remember { mutableStateOf(true) }
+
+                // show the login dialog if necessary
+                val showLoginDialog by authViewModel.showLoginDialog.collectAsState()
 
                 if (showOnboarding) {
                     // Onboarding Screen
@@ -123,8 +181,26 @@ class MainActivity : ComponentActivity() {
                     App(
                         navController = navController,
                         themeViewModel = themeViewModel,
-                        weatherViewModel = weatherViewModel
+                        weatherViewModel = weatherViewModel,
+                        plantsViewModel = plantsViewModel,
+                        plantDetailViewModel = plantDetailViewModel,
+                        authViewModel = authViewModel
                     )
+
+                    // Show login dialog when needed
+                    if (showLoginDialog) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.9f))
+                        ) {
+                            LoginScreen(
+                                navController = navController,
+                                authManager = authViewModel.getAuthManager(),
+                                onDismiss = { authViewModel.hideLogin() }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -139,6 +215,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+//    public override fun onStart() {
+//        super.onStart()
+//        // Check if user is signed in (non-null) and update UI accordingly.
+//        val currentUser = auth.currentUser
+//        if (currentUser != null) {
+//            TODO()
+//        }
+//    }
+
+    /**
+     * Purpose: Check if location permissions are already granted
+     *
+     * @return Boolean indicating whether fine or coarse location permission is granted
+     */
     private fun hasLocationPermissions(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
@@ -150,6 +240,11 @@ class MainActivity : ComponentActivity() {
                 ) == PackageManager.PERMISSION_GRANTED
     }
 
+    /**
+     * Purpose: Request location permissions from the user
+     *
+     * Launches the permission request dialog for both fine and coarse location
+     */
     private fun requestLocationPermissions() {
         Log.d("LocationPermission", "Requesting location permissions")
         locationPermissionRequest.launch(
@@ -162,7 +257,18 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * App entry
+ * Purpose: Main app composable that sets up navigation and screen structure
+ *
+ * Creates the app scaffold with bottom navigation bar, floating action button,
+ * and navigation host for different screens.
+ *
+ * @param modifier Modifier for customizing the layout
+ * @param navController Navigation controller for handling screen navigation
+ * @param themeViewModel ViewModel that manages theme preferences
+ * @param weatherViewModel ViewModel that provides weather data
+ * @param plantsViewModel ViewModel that manages plants list data
+ * @param plantDetailViewModel ViewModel that manages plant detail data
+ * @param authViewModel ViewModel that handles authentication state
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -170,11 +276,21 @@ fun App(
     modifier: Modifier = Modifier,
     navController: NavHostController,
     themeViewModel: ThemeViewModel,
-    weatherViewModel: WeatherViewModel
+    weatherViewModel: WeatherViewModel,
+    plantsViewModel: PlantsViewModel,
+    plantDetailViewModel: PlantDetailViewModel,
+    authViewModel: AuthViewModel
 ){
+    // only for development
+    LaunchedEffect(key1 = Unit) {
+        val isSignIn = authViewModel.getAuthManager().signIn("xqxu512@gmail.com", "gg123456")
+        Log.i("Auth", "${isSignIn}")
+    }
+
 
     val scrollState = rememberScrollState()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val isLoggedIn by remember { authViewModel.isLoggedIn }
 
     Scaffold(
         modifier = Modifier
@@ -183,7 +299,12 @@ fun App(
         floatingActionButton = {
             if (currentRoute == Destination.Home.route) {
                 FloatingButton("Add a new Plant") {
-                    // add a new plant
+                    // Check if logged in before adding a plant
+                    if (isLoggedIn) {
+                        navController.navigate(Destination.AddPlant.route)
+                    } else {
+                        authViewModel.showLogin()
+                    }
                 }
             }
         }
@@ -203,13 +324,16 @@ fun App(
                 PlantsScreen(
                     navController = navController,
                     innerPadding,
-                    scrollState)
+                    scrollState,
+                    plantsViewModel
+                )
             }
             composable(Destination.Community.route) {
                 CommunityScreen(
                     navController = navController,
                     innerPadding,
-                    scrollState)
+                    scrollState
+                )
             }
             composable(Destination.Profile.route) {
                 ProfileScreen(
@@ -217,6 +341,28 @@ fun App(
                     innerPadding,
                     scrollState,
                     themeViewModel
+                )
+            }
+            composable(Destination.AddPlant.route) {
+                AddPlantScreen(
+                    navController = navController,
+                    innerPadding = innerPadding
+                )
+            }
+            composable(
+                route = Destination.PlantDetail.routeWithArgs,
+                arguments = listOf(
+                    navArgument(Destination.PlantDetail.plantIdArg) {
+                        type = NavType.IntType
+                    }
+                )
+            ) { backStackEntry ->
+                val plantId = backStackEntry.arguments?.getInt(Destination.PlantDetail.plantIdArg) ?: 0
+                PlantDetailScreen(
+                    navController = navController,
+                    innerPadding = innerPadding,
+                    plantId = plantId,
+                    viewModel = plantDetailViewModel
                 )
             }
         }

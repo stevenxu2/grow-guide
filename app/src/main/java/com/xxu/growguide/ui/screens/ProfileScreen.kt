@@ -3,7 +3,6 @@ package com.xxu.growguide.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,9 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +41,14 @@ import androidx.navigation.compose.rememberNavController
 import com.xxu.growguide.R
 import com.xxu.growguide.viewmodels.ThemeViewModel
 
+/**
+ * Purpose: Displays the user profile screen with personal information and app settings
+ *
+ * @param navController Navigation controller for screen navigation
+ * @param innerPadding Padding values from the parent layout
+ * @param scrollState State object for handling scrolling behavior
+ * @param themeViewModel ViewModel that manages theme preferences
+ */
 @Composable
 fun ProfileScreen(navController: NavHostController, innerPadding: PaddingValues, scrollState: ScrollState, themeViewModel: ThemeViewModel){
     Column(
@@ -57,10 +60,13 @@ fun ProfileScreen(navController: NavHostController, innerPadding: PaddingValues,
     ) {
         ProfileHeader()
         ProfileBanner()
-        FrequentSettings(themeViewModel)
+        CommonSettings(themeViewModel)
     }
 }
 
+/**
+ * Purpose: Provides a preview of the ProfileScreen for Android Studio design view
+ */
 @Composable
 @Preview(showBackground = true)
 fun ProfileScreenPreview() {
@@ -77,9 +83,8 @@ fun ProfileScreenPreview() {
     )
 }
 
-
 /**
- * Display the header of the screen
+ * Purpose: Displays the header section of the profile screen with title
  */
 @Composable
 fun ProfileHeader(){
@@ -104,7 +109,7 @@ fun ProfileHeader(){
 
 
 /**
- * Profile banner
+ * Purpose: Displays the user's profile information including avatar, name, and location
  */
 @Composable
 fun ProfileBanner(){
@@ -174,10 +179,12 @@ fun ProfileBanner(){
 }
 
 /**
- * A list of the app settings
+ * Purpose: Displays a list of common settings and options for the user
+ *
+ * @param themeViewModel ViewModel that manages theme preferences
  */
 @Composable
-fun FrequentSettings(themeViewModel: ThemeViewModel) {
+fun CommonSettings(themeViewModel: ThemeViewModel) {
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
@@ -224,7 +231,9 @@ fun FrequentSettings(themeViewModel: ThemeViewModel) {
 }
 
 /**
- * A toggle for switching Light/Dark mode
+ * Purpose: Provides a toggle switch for changing between light and dark themes
+ *
+ * @param themeViewModel ViewModel that manages theme preferences
  */
 @Composable
 fun ThemeToggle(themeViewModel: ThemeViewModel) {
@@ -244,7 +253,7 @@ fun ThemeToggle(themeViewModel: ThemeViewModel) {
 }
 
 /**
- * language setting
+ * Purpose: Displays language selection option
  */
 @Composable
 fun LanguageSetting() {
@@ -269,7 +278,7 @@ fun LanguageSetting() {
 }
 
 /**
- * account management setting
+ * Purpose: Provides navigation to account management options
  */
 @Composable
 fun AccountManagement() {
@@ -290,7 +299,7 @@ fun AccountManagement() {
 }
 
 /**
- * more settings
+ * Purpose: Provides navigation to additional app settings
  */
 @Composable
 fun MoreSettings() {
@@ -311,7 +320,7 @@ fun MoreSettings() {
 }
 
 /**
- * log out setting
+ * Purpose: Provides option for user to log out of their account
  */
 @Composable
 fun LogOut() {

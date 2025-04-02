@@ -13,7 +13,7 @@ import com.xxu.growguide.data.entity.WeatherEntity
 interface WeatherDao {
     /**
      * Purpose: Insert weather data into the database
-     * If there's a conflict, replace the existing record
+     *          If there's a conflict, replace the existing record
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWeather(weatherEntity: WeatherEntity)

@@ -16,9 +16,14 @@ import kotlin.coroutines.suspendCoroutine
  * Utility object for location-related functions
  */
 object LocationHelper {
+    // Tag for logging
     private const val TAG = "LocationHelper"
+
     /**
-     * Checks if location permissions are granted
+     * Purpose: Checks if location permissions are granted
+     *
+     * @param context The context used to check for permissions
+     * @return Boolean indicating whether location permissions are granted (true) or not (false)
      */
     fun hasLocationPermission(context: Context): Boolean {
         return ActivityCompat.checkSelfPermission(
@@ -31,8 +36,11 @@ object LocationHelper {
     }
 
     /**
-     * Gets the current location as a one-time request
-     * Returns null if permission is not granted
+     * Purpose: Gets the current location as a one-time request
+     *
+     * @param context The context used to access location services
+     * @return Location object containing the current location, or null if permission is not granted
+     *         or location cannot be determined
      */
     @SuppressLint("MissingPermission")
     suspend fun getCurrentLocation(context: Context): Location? = suspendCoroutine { continuation ->
@@ -55,7 +63,10 @@ object LocationHelper {
     }
 
     /**
-     * Formats location for weather API
+     * Purpose: Formats location for weather API consumption
+     *
+     * @param location The location object to format, can be null
+     * @return String in the format "latitude,longitude" if location is available, or default location "Winnipeg" if null
      */
     fun formatLocationForWeatherApi(location: Location?): String {
         return if (location != null) {

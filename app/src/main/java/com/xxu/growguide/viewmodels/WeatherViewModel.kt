@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 /**
- * View model for weather-related functionality
+ * Purpose: View model for weather related functionality
  */
 class WeatherViewModel(
     private val weatherManager: WeatherManager
@@ -22,7 +22,7 @@ class WeatherViewModel(
     val weatherState: StateFlow<WeatherUiState> = _weatherState
 
     /**
-     * Fetch current weather for user's location
+     * Purpose: Fetch current weather for user's location
      */
     fun fetchCurrentWeather() {
         viewModelScope.launch {
@@ -43,7 +43,7 @@ class WeatherViewModel(
     }
 
     /**
-     * Refresh weather data
+     * Purpose: Refresh weather data
      */
     fun refreshWeather() {
         fetchCurrentWeather()
@@ -51,7 +51,7 @@ class WeatherViewModel(
 }
 
 /**
- * UI state for weather data
+ * Purpose: UI state for weather data
  */
 sealed class WeatherUiState {
     data object Loading : WeatherUiState()
@@ -60,7 +60,7 @@ sealed class WeatherUiState {
 }
 
 /**
- * Factory for creating WeatherViewModel
+ * Purpose: Factory for creating WeatherViewModel
  */
 class WeatherViewModelFactory(
     private val weatherManager: WeatherManager
