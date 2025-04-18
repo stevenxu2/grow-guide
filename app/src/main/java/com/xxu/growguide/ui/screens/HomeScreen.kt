@@ -65,7 +65,7 @@ fun HomeScreen(
     val weatherState by weatherViewModel.weatherState.collectAsState()
 
     // Fetch weather data when the screen is first displayed
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(Unit) {
         weatherViewModel.fetchCurrentWeather()
     }
 
@@ -77,7 +77,7 @@ fun HomeScreen(
             .padding(horizontal = 20.dp, vertical = 16.dp)
             .verticalScroll(scrollState)
     ) {
-        HomeHeader()
+        //HomeHeader()
         WeatherCard(weatherViewModel, weatherState)
         TodayTasks()
         MyPlants()
@@ -105,29 +105,9 @@ fun HomeHeader(){
             fontSize = 32.sp,
             color = MaterialTheme.colorScheme.onSurface
         )
-
-        // Profile icon
-//        Box(
-//            modifier = Modifier
-//                .size(48.dp)
-//                .clip(CircleShape)
-//                .background(MaterialTheme.colorScheme.primaryContainer)
-//                .padding(8.dp),
-//            contentAlignment = Alignment.Center
-//        ) {
-//            Icon(
-//                imageVector = Icons.Default.Person,
-//                contentDescription = "Profile",
-//                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-//                modifier = Modifier.size(24.dp)
-//            )
-//        }
     }
-
     Spacer(modifier = Modifier.height(16.dp))
 }
-
-
 
 /**
  * Purpose: Displays a section showing the user's tasks for today and upcoming days
@@ -147,11 +127,11 @@ fun TodayTasks(){
                 text = "Today's Tasks",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
+                fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         TaskCard("Water Tomatoes", "Due today")
         TaskCard("Water Strawberries", "Due tomorrow")
 
@@ -197,14 +177,14 @@ fun TaskCard(title: String, dueText: String) {
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
+                fontSize = 16.sp,
             )
             Spacer(modifier = Modifier.size(4.dp))
             Text(
                 text = dueText,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
+                fontSize = 14.sp,
             )
         }
         Column(

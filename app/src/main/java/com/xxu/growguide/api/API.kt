@@ -22,8 +22,8 @@ object API {
 
     // Plants API base URL from perenual.com
     private const val PLANTS_API_BASE_URL = "https://perenual.com/api/"
-    //private const val PLANTS_API_KEY = "sk-Ijdi67ea15d3f3c529520"
-    private const val PLANTS_API_KEY = "sk-5GJ867ecd3a02ba609559"
+    private const val PLANTS_API_KEY = "sk-Ijdi67ea15d3f3c529520"
+    //private const val PLANTS_API_KEY = "sk-5GJ867ecd3a02ba609559"
 
     /**
      * Purpose: Create Moshi instance with Kotlin adapter factory

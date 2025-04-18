@@ -11,7 +11,12 @@ sealed class Destination(val route: String) {
     object Community : Destination("Community")
     object Profile : Destination("Profile")
     object Login : Destination("login")
-    object AddPlant : Destination("add_plant")
+
+    object AddPlant : Destination("add_plant") {
+        const val plantIdArg = "plantId"
+        val routeWithArgs = "$route/{$plantIdArg}"
+        fun createRoute(plantId: Int) = "$route/$plantId"
+    }
 
     object PlantDetail : Destination("plant_detail") {
         const val plantIdArg = "plantId"

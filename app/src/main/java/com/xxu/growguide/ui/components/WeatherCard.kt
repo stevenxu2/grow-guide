@@ -66,7 +66,7 @@ fun WeatherCard(weatherViewModel: WeatherViewModel ,weatherState: WeatherUiState
         }
     }
 
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(18.dp))
 }
 
 /**

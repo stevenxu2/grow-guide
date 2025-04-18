@@ -6,14 +6,19 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.xxu.growguide.data.entity.PlantsEntity
 import com.xxu.growguide.data.entity.UserEntity
+import com.xxu.growguide.data.entity.UserPlantsEntity
 import com.xxu.growguide.data.entity.WeatherEntity
 
 /**
  * Purpose: Room database for the GrowGuide application
  */
 @Database(
-    entities = [WeatherEntity::class, PlantsEntity::class, UserEntity::class],
-    version = 4,
+    entities = [
+        WeatherEntity::class,
+        PlantsEntity::class,
+        UserEntity::class,
+        UserPlantsEntity::class],
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

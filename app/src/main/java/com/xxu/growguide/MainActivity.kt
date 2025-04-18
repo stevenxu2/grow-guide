@@ -1,27 +1,13 @@
 package com.xxu.growguide
 
-import android.content.Context
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -31,7 +17,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -75,7 +60,6 @@ import com.xxu.growguide.ui.viewmodels.PlantDetailViewModelFactory
 import com.xxu.growguide.ui.viewmodels.PlantsViewModel
 import com.xxu.growguide.ui.viewmodels.PlantsViewModelFactory
 import com.xxu.growguide.viewmodels.AuthViewModel
-import kotlinx.coroutines.launch
 
 /**
  * Purpose: Main entry point for the application
@@ -161,7 +145,7 @@ class MainActivity : ComponentActivity() {
                 //val sharedPrefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
                 //val onboardingComplete = sharedPrefs.getBoolean("onboarding_complete", false)
                 //var showOnboarding by remember { mutableStateOf(!onboardingComplete) }
-                var showOnboarding by remember { mutableStateOf(true) }
+                var showOnboarding by remember { mutableStateOf(false) }
 
                 // show the login dialog if necessary
                 val showLoginDialog by authViewModel.showLoginDialog.collectAsState()
@@ -178,6 +162,8 @@ class MainActivity : ComponentActivity() {
                 } else {
                     // Main App
                     val navController = rememberNavController()
+
+                    //TestAddPlantScreen()
                     App(
                         navController = navController,
                         themeViewModel = themeViewModel,
@@ -281,7 +267,7 @@ fun App(
     plantDetailViewModel: PlantDetailViewModel,
     authViewModel: AuthViewModel
 ){
-    // only for development
+    // only for development, remove it before publishing
     LaunchedEffect(key1 = Unit) {
         val isSignIn = authViewModel.getAuthManager().signIn("xqxu512@gmail.com", "gg123456")
         Log.i("Auth", "${isSignIn}")
@@ -292,16 +278,29 @@ fun App(
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val isLoggedIn by remember { authViewModel.isLoggedIn }
 
+    // State to track whether we're viewing a plant detail overlay
+    var currentOverlayPlantId by remember { mutableStateOf<Int?>(null) }
+
+    // Check if we're on a detail screen that should hide navigation
+    val isHiddenNav = currentRoute?.startsWith("plant_detail/") == true ||
+                currentRoute?.startsWith("add_plant/") == true
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize(),
-        bottomBar = { BottomNav(navController = navController) },
+
+        // Only show bottom navigation when not screens l overlay
+        bottomBar = {
+            if (!isHiddenNav) {
+                BottomNav(navController = navController)
+            }
+        },
         floatingActionButton = {
             if (currentRoute == Destination.Home.route) {
                 FloatingButton("Add a new Plant") {
                     // Check if logged in before adding a plant
                     if (isLoggedIn) {
-                        navController.navigate(Destination.AddPlant.route)
+                        navController.navigate(Destination.Plants.route)
                     } else {
                         authViewModel.showLogin()
                     }
@@ -309,62 +308,93 @@ fun App(
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = navController as NavHostController, startDestination = Destination.Home.route
-        ) {
-            composable(Destination.Home.route) {
-                HomeScreen(
-                    navController = navController,
-                    innerPadding,
-                    scrollState,
-                    weatherViewModel
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Main navigation content
+            NavHost(
+                navController = navController,
+                startDestination = Destination.Home.route
+            ) {
+                composable(Destination.Home.route) {
+                    HomeScreen(
+                        navController = navController,
+                        innerPadding,
+                        scrollState,
+                        weatherViewModel
+                    )
+                }
+                composable(Destination.Plants.route) {
+                    PlantsScreen(
+                        navController = navController,
+                        innerPadding,
+                        scrollState,
+                        plantsViewModel,
+                    )
+                }
+                composable(Destination.Community.route) {
+                    CommunityScreen(
+                        navController = navController,
+                        innerPadding,
+                        scrollState
+                    )
+                }
+                composable(Destination.Profile.route) {
+                    ProfileScreen(
+                        navController = navController,
+                        innerPadding,
+                        scrollState,
+                        themeViewModel
+                    )
+                }
+                composable(
+                    route = Destination.AddPlant.routeWithArgs,
+                    arguments = listOf(
+                        navArgument(Destination.AddPlant.plantIdArg) {
+                            type = NavType.IntType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val plantId = backStackEntry.arguments?.getInt(Destination.AddPlant.plantIdArg) ?: 0
+                    AddPlantScreen(
+                        navController = navController,
+                        innerPadding = innerPadding,
+                        plantId = plantId,
+                        viewModel = plantDetailViewModel
+                    )
+                }
+                composable(
+                    route = Destination.PlantDetail.routeWithArgs,
+                    arguments = listOf(
+                        navArgument(Destination.PlantDetail.plantIdArg) {
+                            type = NavType.IntType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val plantId = backStackEntry.arguments?.getInt(Destination.PlantDetail.plantIdArg) ?: 0
+                    PlantDetailScreen(
+                        navController = navController,
+                        innerPadding = innerPadding,
+                        plantId = plantId,
+                        viewModel = plantDetailViewModel
+                    )
+                }
             }
-            composable(Destination.Plants.route) {
-                PlantsScreen(
-                    navController = navController,
-                    innerPadding,
-                    scrollState,
-                    plantsViewModel
-                )
-            }
-            composable(Destination.Community.route) {
-                CommunityScreen(
-                    navController = navController,
-                    innerPadding,
-                    scrollState
-                )
-            }
-            composable(Destination.Profile.route) {
-                ProfileScreen(
-                    navController = navController,
-                    innerPadding,
-                    scrollState,
-                    themeViewModel
-                )
-            }
-            composable(Destination.AddPlant.route) {
-                AddPlantScreen(
-                    navController = navController,
-                    innerPadding = innerPadding
-                )
-            }
-            composable(
-                route = Destination.PlantDetail.routeWithArgs,
-                arguments = listOf(
-                    navArgument(Destination.PlantDetail.plantIdArg) {
-                        type = NavType.IntType
-                    }
-                )
-            ) { backStackEntry ->
-                val plantId = backStackEntry.arguments?.getInt(Destination.PlantDetail.plantIdArg) ?: 0
-                PlantDetailScreen(
-                    navController = navController,
-                    innerPadding = innerPadding,
-                    plantId = plantId,
-                    viewModel = plantDetailViewModel
-                )
-            }
+
+            // Plant detail overlay (shown on top of everything when a plant is selected)
+//            currentOverlayPlantId?.let { plantId ->
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .background(MaterialTheme.colorScheme.background)
+//                ) {
+//                    PlantDetailScreen(
+//                        plantId = plantId,
+//                        navController = navController,
+//                        innerPadding = innerPadding,
+//                        viewModel = plantDetailViewModel,
+//                        onBack = { currentOverlayPlantId = null }
+//                    )
+//                }
+//            }
         }
     }
 }

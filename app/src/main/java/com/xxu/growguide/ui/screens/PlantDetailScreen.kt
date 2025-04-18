@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -78,7 +80,7 @@ fun PlantDetailScreen(
     plantId: Int,
     navController: NavHostController,
     innerPadding: PaddingValues,
-    viewModel: PlantDetailViewModel
+    viewModel: PlantDetailViewModel,
 ) {
     // Collect states from ViewModel
     val plantDetail by viewModel.plantDetail.collectAsState()
@@ -91,223 +93,258 @@ fun PlantDetailScreen(
     LaunchedEffect(plantId) {
         viewModel.loadPlantDetail(plantId)
     }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-    ) {
-        Text(
-            text = "plantId: ${plantId}, plantDetail: ${plantDetail}, isLoading: ${isLoading}"
-        )
-    }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(innerPadding)
     ) {
-        // Loading state
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-        }
-        // Error state
-        else if (error != null) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Error: $error",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-        // Content state
-        else if (plantDetail != null) {
-            val plant = plantDetail!!
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-            ) {
-                // Header with back button
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { navController.navigateUp() }
+                // Loading state
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                // Error state
+                else if (error != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Error: $error",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
+                // Content state
+                else if (plantDetail != null) {
+                    val plant = plantDetail!!
 
-                // Plant image
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp)
-                        .clip(RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (plant.imageUrl.isNotEmpty()) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(plant.imageUrl)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = plant.commonName,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Box(
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.tertiaryContainer),
-                            contentAlignment = Alignment.Center
                         ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_plant_placeholder),
-                                contentDescription = "Plant Placeholder",
-                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onTertiaryContainer),
-                                modifier = Modifier.size(80.dp)
+                            // Plant image
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp)
+                            ) {
+                                if (plant.imageUrl.isNotEmpty()) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(plant.imageUrl)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = plant.commonName,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(MaterialTheme.colorScheme.tertiaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.ic_plant_placeholder),
+                                            contentDescription = "Plant Placeholder",
+                                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onTertiaryContainer),
+                                            modifier = Modifier.size(80.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Plant information
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                        ) {
+                            // Plant name
+                            Text(
+                                text = plant.commonName,
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            // Scientific name
+                            if (plant.scientificName.isNotEmpty()) {
+                                Text(
+                                    text = plant.scientificName,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontStyle = FontStyle.Italic,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Basic info card
+                            PlantBasicInfoCard(plant)
+
+                            Spacer(modifier = Modifier.height(32.dp))
+
+                            // Description
+                            if (plant.description.isNotEmpty()) {
+                                Text(
+                                    text = "Description",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = plant.description,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                Spacer(modifier = Modifier.height(32.dp))
+                            }
+
+                            // Care instructions
+                            Text(
+                                text = "Care Instructions",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Watering
+                            if (plant.watering.isNotEmpty()) {
+                                CareItem(
+                                    icon = Icons.Default.WaterDrop,
+                                    title = "Watering",
+                                    description = plant.watering
+                                )
+                            }
+
+                            // Sunlight
+                            if (plant.sunlight.isNotEmpty()) {
+                                // Capitalizes the first letter
+                                val formattedSunlight = plant.sunlight.split(", ").joinToString(", ") {
+                                    it.trim().replaceFirstChar { char -> char.uppercase() }
+                                }
+
+                                CareItem(
+                                    icon = Icons.Default.WbSunny,
+                                    title = "Sunlight",
+                                    description = formattedSunlight
+                                )
+                            }
+
+                            // Maintenance
+                            if (plant.maintenance.isNotEmpty() && plant.maintenance != "null") {
+                                CareItem(
+                                    icon = Icons.Default.Favorite,
+                                    title = "Maintenance",
+                                    description = plant.maintenance
+                                )
+                            }
+
+                            // Growth rate
+                            if (plant.growthRate.isNotEmpty()) {
+                                CareItem(
+                                    icon = Icons.Default.Timer,
+                                    title = "Growth Rate",
+                                    description = plant.growthRate
+                                )
+                            }
+
+                            // Additional characteristics
+                            Text(
+                                text = "Characteristics",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                            )
+
+                            // Characteristics grid
+                            PlantCharacteristicsGrid(plant)
+
+                            // Bottom spacing
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
+                    }
+
+                    // Floating back button - always visible at top left
+                    Card(
+                        modifier = Modifier
+                            .padding(top = 12.dp, start = 12.dp)
+                            .size(40.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+                        ),
+                        shape = CircleShape,
+                    ) {
+                        IconButton(
+                            onClick = { navController.navigateUp() },
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
                 }
+            }
+        }
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 12.dp)
+        ) {
+            // Add Plant button
+            Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                onClick = {
+                    // Save plant and navigate back
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Plant name
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
                 Text(
-                    text = plant.commonName,
-                    style = MaterialTheme.typography.headlineLarge,
+                    text = "Add to My Garden",
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
-
-                // Scientific name
-                if (plant.scientificName.isNotEmpty()) {
-                    Text(
-                        text = plant.scientificName,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontStyle = FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Basic info card
-                PlantBasicInfoCard(plant)
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Description
-                if (plant.description.isNotEmpty()) {
-                    Text(
-                        text = "Description",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = plant.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-
-                // Care instructions
-                Text(
-                    text = "Care Instructions",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Watering
-                if (plant.watering.isNotEmpty()) {
-                    CareItem(
-                        icon = Icons.Default.WaterDrop,
-                        title = "Watering",
-                        description = plant.watering
-                    )
-                }
-
-                // Sunlight
-                if (plant.sunlight.isNotEmpty()) {
-                    // Capitalizes the first letter
-                    val formattedSunlight = plant.sunlight.split(", ").joinToString(", ") {
-                        it.trim().replaceFirstChar { char -> char.uppercase() }
-                    }
-
-                    CareItem(
-                        icon = Icons.Default.WbSunny,
-                        title = "Sunlight",
-                        description = formattedSunlight
-                    )
-                }
-
-                // Maintenance
-                if (plant.maintenance.isNotEmpty() && plant.maintenance != "null") {
-                    CareItem(
-                        icon = Icons.Default.Favorite,
-                        title = "Maintenance",
-                        description = plant.maintenance
-                    )
-                }
-
-                // Growth rate
-                if (plant.growthRate.isNotEmpty()) {
-                    CareItem(
-                        icon = Icons.Default.Timer,
-                        title = "Growth Rate",
-                        description = plant.growthRate
-                    )
-                }
-
-                // Additional characteristics
-                Text(
-                    text = "Characteristics",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-                )
-
-                // Characteristics grid
-                PlantCharacteristicsGrid(plant)
-
-                // Bottom spacing
-                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

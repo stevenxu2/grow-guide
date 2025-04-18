@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,6 +28,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,6 +49,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -53,6 +59,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -60,7 +68,9 @@ import coil3.request.crossfade
 import com.xxu.growguide.R
 import com.xxu.growguide.data.models.plants.list.Data
 import com.xxu.growguide.destinations.Destination
+import com.xxu.growguide.ui.viewmodels.PlantDetailViewModel
 import com.xxu.growguide.ui.viewmodels.PlantsViewModel
+import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 
 /**
  * Purpose: Displays a screen showing a list of plants with search functionality
@@ -75,62 +85,67 @@ fun PlantsScreen(
     navController: NavHostController,
     innerPadding: PaddingValues,
     scrollState: ScrollState,
-    plantsViewModel: PlantsViewModel
+    plantsViewModel: PlantsViewModel,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(innerPadding)
-            .padding(horizontal = 20.dp, vertical = 16.dp)
-    ) {
-        // Collect states from ViewModel
-        val plants by plantsViewModel.plants.collectAsState()
-        val isLoading by plantsViewModel.isLoading.collectAsState()
-        val error by plantsViewModel.error.collectAsState()
-        val searchQuery by plantsViewModel.searchQuery.collectAsState()
-        val resetScroll by plantsViewModel.resetScroll.collectAsState()
+    // State to track which plant ID to show details for (null means show the list)
+    var selectedPlantId by remember { mutableStateOf<Int?>(null) }
 
-        PlantsHeader(navController)
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Main content
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(innerPadding)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+        ) {
+            // Collect states from ViewModel
+            val plants by plantsViewModel.plants.collectAsState()
+            val isLoading by plantsViewModel.isLoading.collectAsState()
+            val error by plantsViewModel.error.collectAsState()
+            val resetScroll by plantsViewModel.resetScroll.collectAsState()
 
-        SearchPlant(
-            plantsViewModel = plantsViewModel,
+            PlantsHeader(navController)
 
-        )
+            SearchPlant(
+                plantsViewModel = plantsViewModel,
 
-        if (isLoading && plants.isEmpty()) {
-            // Show loading indicator when initially loading
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-        } else if (error != null && plants.isEmpty()) {
-            // Show error message if there's an error and no data
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Error: $error",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyLarge
+                )
+
+            if (isLoading && plants.isEmpty()) {
+                // Show loading indicator when initially loading
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            } else if (error != null && plants.isEmpty()) {
+                // Show error message if there's an error and no data
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Error: $error",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            } else {
+                // Show plant list
+                PlantList(
+                    plants = plants,
+                    isLoading = isLoading,
+                    resetScroll = resetScroll,
+                    onSearch = { plantsViewModel.clearScrollReset() },
+                    onLoadMore = { plantsViewModel.loadMorePlants() },
+                    onPlantClick = { plantId ->
+                        navController.navigate("plant_detail/$plantId")
+                    },
+                    navController = navController
                 )
             }
-        } else {
-            // Show plant list
-
-            PlantList(
-                plants = plants,
-                isLoading = isLoading,
-                resetScroll = resetScroll,
-                onSearch = { plantsViewModel.clearScrollReset() },
-                onLoadMore = { plantsViewModel.loadMorePlants() },
-                onPlantClick = { plantId ->
-                    navController.navigate("plant_detail/$plantId")
-                }
-            )
         }
     }
 }
@@ -157,27 +172,6 @@ fun PlantsHeader(navController: NavHostController){
             fontSize = 32.sp,
             color = MaterialTheme.colorScheme.onSurface
         )
-
-        // Add icon
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add",
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable {
-                        navController.navigate(Destination.AddPlant.route)
-                    },
-            )
-        }
     }
     Spacer(modifier = Modifier.height(16.dp))
 }
@@ -193,7 +187,7 @@ fun PlantsHeader(navController: NavHostController){
 fun SearchPlant(
     plantsViewModel: PlantsViewModel
 ){
-    var searchQuery by remember{ mutableStateOf("") }
+    val searchQuery by plantsViewModel.searchQuery.collectAsState()
 
     Row(
         modifier = Modifier
@@ -201,7 +195,7 @@ fun SearchPlant(
     ) {
         SearchBar(
             query = searchQuery,
-            onQueryChange = { searchQuery = it },
+            onQueryChange = { plantsViewModel.updateSearchQuery(it) },
             onSearch = { plantsViewModel.searchPlants(searchQuery) },
             active = false,
             onActiveChange = { },
@@ -220,7 +214,7 @@ fun SearchPlant(
             },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
+                    IconButton(onClick = { plantsViewModel.updateSearchQuery("") }) {
                         Icon(Icons.Default.Clear, contentDescription = "Clear")
                     }
                 }
@@ -259,7 +253,8 @@ fun PlantList(
     resetScroll: Boolean = false,
     onSearch: () -> Unit,
     onLoadMore: () -> Unit,
-    onPlantClick: (Int) -> Unit
+    onPlantClick: (Int) -> Unit,
+    navController: NavHostController
 ) {
     val listState = rememberLazyListState()
 
@@ -293,6 +288,7 @@ fun PlantList(
             plant?.let {
                 PlantCard(
                     plant = it,
+                    navController = navController,
                     onClick = { it.id?.let { id -> onPlantClick(id) } }
                 )
             }
@@ -324,11 +320,14 @@ fun PlantList(
  * @param onClick Callback function when the card is clicked
  */
 @Composable
-private fun PlantCard(plant: Data, onClick: () -> Unit) {
+private fun PlantCard(
+    plant: Data,
+    navController: NavHostController,
+    onClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -337,14 +336,14 @@ private fun PlantCard(plant: Data, onClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                 .border(1.dp, MaterialTheme.colorScheme.surfaceDim, shape = RoundedCornerShape(12.dp))
                 .clickable { onClick() }
-                .padding(16.dp),
+                .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Plant image
             Box(
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(CircleShape)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.tertiaryContainer),
                 contentAlignment = Alignment.Center
             ) {
@@ -359,7 +358,6 @@ private fun PlantCard(plant: Data, onClick: () -> Unit) {
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(80.dp)
-                            .clip(CircleShape)
                     )
                 } else {
                     // Show placeholder
@@ -372,7 +370,7 @@ private fun PlantCard(plant: Data, onClick: () -> Unit) {
                 }
             }
 
-            Spacer(modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
             // Plant details
             Column(
@@ -380,22 +378,54 @@ private fun PlantCard(plant: Data, onClick: () -> Unit) {
             ) {
                 Text(
                     text = plant.commonName.toString(),
-                    style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-
                 Text(
                     text = plant.scientificName?.firstOrNull() ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
+
+            // Add icon with shadow
+            Card(
+                modifier = Modifier
+                    .size(40.dp),
+                shape = CircleShape,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 4.dp  // Adjust this value to control shadow intensity
+                )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                plant.id?.let { plantId ->
+                                    navController.navigate("add_plant/$plantId")
+                                }
+                            }
+                    )
+                }
+            }
         }
     }
+
+    Spacer(modifier = Modifier.height(8.dp))
 }

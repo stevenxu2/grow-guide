@@ -85,7 +85,7 @@ data class PlantData(
     @Json(name = "propagation")
     var propagation: List<String?>?,
     @Json(name = "pruning_count")
-    var pruningCount: PruningCount?,
+    var pruningCount: Any?,
     @Json(name = "pruning_month")
     var pruningMonth: List<String?>?,
     @Json(name = "salt_tolerant")
