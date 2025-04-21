@@ -1,24 +1,33 @@
 package com.xxu.growguide.api
 
 import android.content.Context
+import android.util.Log
+import com.xxu.growguide.data.database.AppDatabase
 import com.xxu.growguide.data.database.PlantsDao
 import com.xxu.growguide.data.entity.PlantsEntity
+import com.xxu.growguide.data.entity.UserPlantsEntity
 import com.xxu.growguide.data.models.plants.DefaultImage
 import com.xxu.growguide.data.models.plants.PlantData
 import com.xxu.growguide.data.models.plants.list.PlantsListData
+import com.xxu.growguide.ui.viewmodels.UserPlantWithDetails
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 
 /**
  * Purpose: Manager class that handles fetching and caching plant data
  */
-class PlantManager(
+class PlantsManager(
     private val plantsApiService: PlantsApiService,
-    private val plantsDao: PlantsDao,
+    private val database: AppDatabase,
     private val context: Context
 ) {
+    private val plantsDao = database.plantsDao()
+    private val userPlantsDao = database.userPlantsDao()
+
     /**
      * Purpose: Get a list of plants with optional search query
      *
@@ -74,6 +83,95 @@ class PlantManager(
             throw e
         }
     }.flowOn(Dispatchers.IO)
+
+
+    suspend fun saveUserPlant(plant: UserPlantsEntity?) {
+        try {
+            if (plant != null) {
+                userPlantsDao.insertUserPlant(plant)
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    /**
+     * Purpose: Get all plants in a user's garden with their details
+     *
+     * @param userId The ID of the user whose garden to retrieve
+     * @return Flow of UserPlantWithDetails containing user plants with their details
+     */
+    fun getUserPlants(userId: String): Flow<List<UserPlantWithDetails>> {
+        return userPlantsDao.getUserPlants(userId)
+            .map { userPlantsList ->
+                val userPlantsWithDetails = mutableListOf<UserPlantWithDetails>()
+
+                for (userPlant in userPlantsList) {
+                    val plant = plantsDao.getPlantById(userPlant.plantId)
+                    if (plant != null) {
+                        userPlantsWithDetails.add(
+                            UserPlantWithDetails(
+                                userPlant = userPlant,
+                                plant = plant
+                            )
+                        )
+                    }
+                }
+
+                userPlantsWithDetails
+            }
+    }
+
+    fun getUserPlantDetail(userPlantId: Long): Flow<UserPlantsEntity?> {
+        return flow {
+            try {
+                val userPlant = userPlantsDao.getUserPlantById(userPlantId)
+                emit(userPlant)
+            } catch (e: Exception) {
+                Log.e("PlantsManager", "Error retrieving user plant: ${e.message}")
+                emit(null)
+            }
+        }
+    }
+
+    /**
+     * Purpose: Remove a plant from user's garden
+     *
+     * @param userPlantId The ID of the user plant to remove
+     * @return True if successful, false otherwise
+     */
+    suspend fun removeUserPlant(userPlantId: Long): Boolean {
+        return try {
+            val userPlant = userPlantsDao.getUserPlantById(userPlantId) ?: return false
+            userPlantsDao.deleteUserPlant(userPlant)
+            true
+        } catch (e: Exception) {
+            Log.e("PlantsManager", "Error removing plant: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Purpose: Record watering for a plant in user's garden
+     *
+     * @param userPlantId The ID of the user plant to update
+     * @return True if successful, false otherwise
+     */
+    suspend fun recordPlantWatering(userPlantId: Long): Boolean {
+        return try {
+            // Get the plant
+            val userPlant = userPlantsDao.getUserPlantById(userPlantId) ?: return false
+
+            // Update the watering date
+            val updatedPlant = userPlant.copy(lastWateredDate = System.currentTimeMillis())
+            userPlantsDao.updateUserPlant(updatedPlant)
+
+            true
+        } catch (e: Exception) {
+            Log.e("PlantsManager", "Error recording watering: ${e.message}")
+            false
+        }
+    }
 
 
     /**

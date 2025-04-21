@@ -27,20 +27,19 @@ import androidx.room.PrimaryKey
     ],
     indices = [
         Index("plantId"),
-        Index("userId"),
-        Index(value = ["plantId", "userId"], unique = true)
+        Index("userId")
     ]
 )
 data class UserPlantsEntity(
     @PrimaryKey(autoGenerate = true)
-    val userPlantId: Long = 0,
+    val userPlantId: Long = 0L,
 
     val userId: String,
     val plantId: Int,
 
     // Custom fields for the user's plant
     val nickname: String? = null,
-    val plantingDate: Long, // Date in milliseconds
+    val plantingDate: Long,
     val imageUri: String? = null,
     val notes: String? = null,
 

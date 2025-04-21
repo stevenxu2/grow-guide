@@ -5,7 +5,6 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,24 +36,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -61,41 +63,33 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.xxu.growguide.R
-import com.xxu.growguide.api.PlantsManager
-import com.xxu.growguide.data.database.AppDatabase
-import com.xxu.growguide.data.database.PlantsDao
-import com.xxu.growguide.data.models.plants.list.Data
-import com.xxu.growguide.ui.viewmodels.PlantsViewModel
-import com.xxu.growguide.ui.viewmodels.PlantsViewModelFactory
+import com.xxu.growguide.ui.viewmodels.Data
+import com.xxu.growguide.ui.viewmodels.MockPlantsViewModel
+import com.xxu.growguide.ui.viewmodels.MockPlantsViewModelFactory
 
 /**
- * Purpose: Displays a screen showing a list of plants with search functionality
+ * Purpose: A mocked version of PlantsScreen for testing and development
+ *
+ * This screen uses the MockPlantsViewModel instead of the real PlantsViewModel,
+ * allowing for testing without actual API calls or database access.
  *
  * @param navController Navigation controller for screen navigation
  * @param innerPadding Padding values from the parent layout
  * @param scrollState State object for handling scrolling behavior
- * @param plantsViewModel ViewModel that provides plant data and search functionality
  */
 @Composable
-fun PlantsScreen(
+fun MockPlantsScreen(
     navController: NavHostController,
     innerPadding: PaddingValues,
-    scrollState: ScrollState,
-    plantsManager: PlantsManager,
-    database: AppDatabase
+    scrollState: ScrollState
 ) {
     val factory = remember {
-        PlantsViewModelFactory(plantsManager, database.plantsDao())
+        MockPlantsViewModelFactory()
     }
 
-    val viewModel: PlantsViewModel = viewModel(factory = factory)
+    val viewModel: MockPlantsViewModel = viewModel(factory = factory)
 
-    // Collect states from ViewModel
-    val plants by viewModel.plants.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val resetScroll by viewModel.resetScroll.collectAsState()
-
+    // Re-use the existing PlantsScreen UI components
     Box(modifier = Modifier.fillMaxSize()) {
         // Main content
         Column(
@@ -103,11 +97,18 @@ fun PlantsScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             PlantsHeader()
 
-            SearchPlant(viewModel)
+            // Use the SearchPlant component with our mock viewModel
+            SearchPlant(viewModel = viewModel)
+
+            // Collect states from MockViewModel
+            val plants by viewModel.plants.collectAsState()
+            val isLoading by viewModel.isLoading.collectAsState()
+            val error by viewModel.error.collectAsState()
+            val resetScroll by viewModel.resetScroll.collectAsState()
 
             if (isLoading && plants.isEmpty()) {
                 // Show loading indicator when initially loading
@@ -130,8 +131,8 @@ fun PlantsScreen(
                     )
                 }
             } else {
-                // Show plant list
-                PlantList(
+                // Show plant list with mock data
+                MockPlantList(
                     plants = plants,
                     isLoading = isLoading,
                     resetScroll = resetScroll,
@@ -147,30 +148,6 @@ fun PlantsScreen(
     }
 }
 
-/**
- * Purpose: Displays the header section of the plants screen with title and add button
- */
-@Composable
-fun PlantsHeader(){
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Header
-        Text(
-            text = "Plants",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            fontSize = 24.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-    Spacer(modifier = Modifier.height(16.dp))
-}
-
 
 /**
  * Purpose: Provides a search bar for filtering plants by name and scientific name
@@ -180,7 +157,7 @@ fun PlantsHeader(){
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchPlant(
-    viewModel: PlantsViewModel
+    viewModel: MockPlantsViewModel
 ){
     val searchQuery by viewModel.searchQuery.collectAsState()
 
@@ -189,6 +166,8 @@ fun SearchPlant(
             .fillMaxWidth()
     ) {
         SearchBar(
+            modifier = Modifier
+                .fillMaxWidth(),
             query = searchQuery,
             onQueryChange = { viewModel.updateSearchQuery(it) },
             onSearch = { viewModel.searchPlants(searchQuery) },
@@ -215,15 +194,13 @@ fun SearchPlant(
                 }
             },
             colors = SearchBarDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                containerColor = MaterialTheme.colorScheme.surfaceDim,
                 dividerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 inputFieldColors = SearchBarDefaults.inputFieldColors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             ),
-            modifier = Modifier
-                .fillMaxWidth()
         ) {
             // Search body
         }
@@ -242,7 +219,7 @@ fun SearchPlant(
  * @param onPlantClick Callback function when a plant is clicked, with plant ID parameter
  */
 @Composable
-fun PlantList(
+fun MockPlantList(
     plants: List<Data?>,
     isLoading: Boolean,
     resetScroll: Boolean = false,
@@ -346,7 +323,7 @@ private fun PlantCard(
                     // Load image from URL
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(plant.defaultImage?.smallUrl)
+                            .data(plant.defaultImage.smallUrl)
                             .crossfade(true)
                             .build(),
                         contentDescription = plant.commonName,
@@ -369,7 +346,7 @@ private fun PlantCard(
 
             // Plant details
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(2f)
             ) {
                 Text(
                     text = plant.commonName.toString(),
@@ -380,7 +357,7 @@ private fun PlantCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = plant.scientificName?.firstOrNull() ?: "",
+                    text = plant.scientificName?.firstOrNull().toString(),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )

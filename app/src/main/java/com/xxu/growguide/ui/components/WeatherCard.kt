@@ -103,7 +103,7 @@ private fun WeatherContent(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .background(MaterialTheme.colorScheme.surfaceDim)
             .padding(16.dp)
             .clickable { onRefresh() },
     ) {
@@ -112,7 +112,7 @@ private fun WeatherContent(
         ) {
             Text(
                 text = "${weatherData.location?.name}",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -125,9 +125,9 @@ private fun WeatherContent(
             )
             Text(
                 text = "$weatherCondition, $wateringAdvice",
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.primary
+                style = MaterialTheme.typography.bodySmall,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Column(

@@ -64,6 +64,9 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.xxu.growguide.R
+import com.xxu.growguide.api.PlantsManager
+import com.xxu.growguide.data.database.AppDatabase
+import com.xxu.growguide.data.database.PlantsDao
 import com.xxu.growguide.data.entity.PlantsEntity
 import com.xxu.growguide.ui.viewmodels.PlantDetailViewModel
 
@@ -81,6 +84,8 @@ fun PlantDetailScreen(
     navController: NavHostController,
     innerPadding: PaddingValues,
     viewModel: PlantDetailViewModel,
+    plantsManager: PlantsManager,
+    database: AppDatabase
 ) {
     // Collect states from ViewModel
     val plantDetail by viewModel.plantDetail.collectAsState()
@@ -99,43 +104,43 @@ fun PlantDetailScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-        ) {
+        // Loading state
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        // Error state
+        else if (error != null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                // Loading state
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-                // Error state
-                else if (error != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Error: $error",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-                // Content state
-                else if (plantDetail != null) {
-                    val plant = plantDetail!!
+                Text(
+                    text = "Error: $error",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        // Content state
+        else if (plantDetail != null) {
+            val plant = plantDetail!!
 
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -322,29 +327,31 @@ fun PlantDetailScreen(
                         }
                     }
                 }
-            }
-        }
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-        ) {
-            // Add Plant button
-            Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                onClick = {
-                    // Save plant and navigate back
 
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            }
+
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
-                Text(
-                    text = "Add to My Garden",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                // Proceed Plant button
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    onClick = {
+                        // Save plant and navigate back
+                        navController.navigate("add_plant/${plantId}")
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(
+                        text = "Proceed",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     }
@@ -360,7 +367,7 @@ fun PlantBasicInfoCard(plant: PlantsEntity) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.outline
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -409,20 +416,20 @@ fun InfoRow(title: String, value: String, isLast: Boolean = false) {
             text = title,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.background
         )
 
         Text(
             text = value.replaceFirstChar { char -> char.uppercase() },
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.background
         )
     }
 
     if (!isLast) {
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 4.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+            color = MaterialTheme.colorScheme.background.copy(alpha = 0.2f)
         )
     }
 }

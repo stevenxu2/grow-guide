@@ -50,15 +50,18 @@ import androidx.navigation.navArgument
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
-import com.xxu.growguide.api.PlantManager
+import com.xxu.growguide.api.PlantsManager
 import com.xxu.growguide.auth.AuthManager
 import com.xxu.growguide.ui.screens.AddPlantScreen
+import com.xxu.growguide.ui.screens.GardenPlantDetailScreen
+import com.xxu.growguide.ui.screens.GardenScreen
 import com.xxu.growguide.ui.screens.LoginScreen
+import com.xxu.growguide.ui.screens.MockPlantsScreen
 import com.xxu.growguide.ui.screens.PlantDetailScreen
+import com.xxu.growguide.ui.viewmodels.MockPlantsViewModel
+import com.xxu.growguide.ui.viewmodels.MockPlantsViewModelFactory
 import com.xxu.growguide.ui.viewmodels.PlantDetailViewModel
 import com.xxu.growguide.ui.viewmodels.PlantDetailViewModelFactory
-import com.xxu.growguide.ui.viewmodels.PlantsViewModel
-import com.xxu.growguide.ui.viewmodels.PlantsViewModelFactory
 import com.xxu.growguide.viewmodels.AuthViewModel
 
 /**
@@ -70,6 +73,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var authManager: AuthManager
     private lateinit var authViewModel: AuthViewModel
+
+    private lateinit var plantsManager: PlantsManager
+    private lateinit var database: AppDatabase
 
     // Define the permission request handler at the class level
     private val locationPermissionRequest = registerForActivityResult(
@@ -101,7 +107,7 @@ class MainActivity : ComponentActivity() {
         authViewModel = ViewModelProvider(this)[AuthViewModel::class.java]
 
         // Initialize the database
-        val database = AppDatabase.getInstance(applicationContext)
+        database = AppDatabase.getInstance(applicationContext)
 
         // Create weather view model
         val weatherApiService = API.provideWeatherApiService()
@@ -115,24 +121,24 @@ class MainActivity : ComponentActivity() {
             WeatherViewModelFactory(weatherManager)
         )[WeatherViewModel::class.java]
 
-        // Create weather view model
+        // Create plants view model
         val plantServiceApi = API.providePlantsApiService()
-        val plantManager = PlantManager(
+
+        // Create the plants manager
+        plantsManager = PlantsManager(
             plantServiceApi,
-            database.plantsDao(),
+            database,
             applicationContext
         )
+
         val plantsViewModel = ViewModelProvider(
             this,
-            PlantsViewModelFactory(
-                plantManager,
-                database.plantsDao()
-            )
-        )[PlantsViewModel::class.java]
+            MockPlantsViewModelFactory()
+        )[MockPlantsViewModel::class.java]
         val plantDetailViewModel = ViewModelProvider(
             this,
             PlantDetailViewModelFactory(
-                plantManager,
+                plantsManager,
                 database.plantsDao()
             )
         )[PlantDetailViewModel::class.java]
@@ -166,9 +172,11 @@ class MainActivity : ComponentActivity() {
                     //TestAddPlantScreen()
                     App(
                         navController = navController,
+                        database = database,
+                        authManager = authManager,
+                        plantsManager = plantsManager,
                         themeViewModel = themeViewModel,
                         weatherViewModel = weatherViewModel,
-                        plantsViewModel = plantsViewModel,
                         plantDetailViewModel = plantDetailViewModel,
                         authViewModel = authViewModel
                     )
@@ -250,23 +258,27 @@ class MainActivity : ComponentActivity() {
  *
  * @param modifier Modifier for customizing the layout
  * @param navController Navigation controller for handling screen navigation
+ * @param database Database for the whole app
  * @param themeViewModel ViewModel that manages theme preferences
  * @param weatherViewModel ViewModel that provides weather data
- * @param plantsViewModel ViewModel that manages plants list data
+ * @param plantsManager Manager class that handles fetching and caching plant data
  * @param plantDetailViewModel ViewModel that manages plant detail data
  * @param authViewModel ViewModel that handles authentication state
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App(
     modifier: Modifier = Modifier,
     navController: NavHostController,
+    database: AppDatabase,
+    plantsManager: PlantsManager,
+    authManager: AuthManager,
     themeViewModel: ThemeViewModel,
     weatherViewModel: WeatherViewModel,
-    plantsViewModel: PlantsViewModel,
     plantDetailViewModel: PlantDetailViewModel,
     authViewModel: AuthViewModel
 ){
+    Log.i("PlantMainActivity", "Rendering MainActivity")
+
     // only for development, remove it before publishing
     LaunchedEffect(key1 = Unit) {
         val isSignIn = authViewModel.getAuthManager().signIn("xqxu512@gmail.com", "gg123456")
@@ -278,9 +290,6 @@ fun App(
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val isLoggedIn by remember { authViewModel.isLoggedIn }
 
-    // State to track whether we're viewing a plant detail overlay
-    var currentOverlayPlantId by remember { mutableStateOf<Int?>(null) }
-
     // Check if we're on a detail screen that should hide navigation
     val isHiddenNav = currentRoute?.startsWith("plant_detail/") == true ||
                 currentRoute?.startsWith("add_plant/") == true
@@ -289,7 +298,7 @@ fun App(
         modifier = Modifier
             .fillMaxSize(),
 
-        // Only show bottom navigation when not screens l overlay
+        // Hide the navigation bar for some screens
         bottomBar = {
             if (!isHiddenNav) {
                 BottomNav(navController = navController)
@@ -323,11 +332,17 @@ fun App(
                     )
                 }
                 composable(Destination.Plants.route) {
-                    PlantsScreen(
+                    MockPlantsScreen(
                         navController = navController,
-                        innerPadding,
-                        scrollState,
-                        plantsViewModel,
+                        innerPadding = innerPadding,
+                        scrollState = scrollState
+                    )
+                }
+                composable(Destination.Garden.route) {
+                    GardenScreen(
+                        navController = navController,
+                        innerPadding = innerPadding,
+                        plantsManager = plantsManager
                     )
                 }
                 composable(Destination.Community.route) {
@@ -356,9 +371,8 @@ fun App(
                     val plantId = backStackEntry.arguments?.getInt(Destination.AddPlant.plantIdArg) ?: 0
                     AddPlantScreen(
                         navController = navController,
-                        innerPadding = innerPadding,
                         plantId = plantId,
-                        viewModel = plantDetailViewModel
+                        plantsManager = plantsManager
                     )
                 }
                 composable(
@@ -374,27 +388,28 @@ fun App(
                         navController = navController,
                         innerPadding = innerPadding,
                         plantId = plantId,
-                        viewModel = plantDetailViewModel
+                        viewModel = plantDetailViewModel,
+                        plantsManager = plantsManager,
+                        database = database,
+                    )
+                }
+                composable(
+                    route = Destination.GardenPlantDetail.routeWithArgs,
+                    arguments = listOf(
+                        navArgument(Destination.GardenPlantDetail.userPlantIdArg) {
+                            type = NavType.LongType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val userPlantId = backStackEntry.arguments?.getLong(Destination.GardenPlantDetail.userPlantIdArg) ?: 0
+                    GardenPlantDetailScreen(
+                        userPlantId = userPlantId,
+                        navController = navController,
+                        innerPadding = innerPadding,
+                        plantsManager = plantsManager,
                     )
                 }
             }
-
-            // Plant detail overlay (shown on top of everything when a plant is selected)
-//            currentOverlayPlantId?.let { plantId ->
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .background(MaterialTheme.colorScheme.background)
-//                ) {
-//                    PlantDetailScreen(
-//                        plantId = plantId,
-//                        navController = navController,
-//                        innerPadding = innerPadding,
-//                        viewModel = plantDetailViewModel,
-//                        onBack = { currentOverlayPlantId = null }
-//                    )
-//                }
-//            }
         }
     }
 }

@@ -105,10 +105,13 @@ class AuthManager private constructor(private val context: Context) {
      */
     suspend fun getCurrentUserFromDb(): UserEntity? {
         return currentUser.value?.uid?.let { uid ->
+            authError.value = null
             try {
-                // need to implement a method in UserDao to get user by ID
-                null
+                withContext(Dispatchers.IO) {
+                    database.userDao().getUser(uid)
+                }
             } catch (e: Exception) {
+                authError.value = e.message
                 null
             }
         }
@@ -164,7 +167,7 @@ class AuthManager private constructor(private val context: Context) {
          */
         fun getInstance(context: Context): AuthManager {
             return instance ?: synchronized(this) {
-                instance ?: AuthManager(context).also { instance = it }
+                instance ?: AuthManager(context.applicationContext).also { instance = it }
             }
         }
     }

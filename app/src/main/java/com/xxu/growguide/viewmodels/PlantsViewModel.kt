@@ -4,27 +4,22 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.xxu.growguide.api.PlantManager
+import com.xxu.growguide.api.PlantsManager
 import com.xxu.growguide.data.database.PlantsDao
-import com.xxu.growguide.data.entity.PlantsEntity
-import com.xxu.growguide.data.models.plants.PlantData
 import com.xxu.growguide.data.models.plants.list.Data
-import com.xxu.growguide.data.models.plants.list.PlantsListData
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 /**
  * Purpose: ViewModel that manages the data and state for the plants list screen
  *
- * @param plantManager Manager that handles fetching plant data from API
+ * @param plantsManager Manager that handles fetching plant data from API
  * @param plantsDao Data access object for local plant database operations
  */
 class PlantsViewModel(
-    private val plantManager: PlantManager,
+    private val plantsManager: PlantsManager,
     private val plantsDao: PlantsDao
 ) : ViewModel() {
 
@@ -87,7 +82,7 @@ class PlantsViewModel(
     private suspend fun fetchPlantsFromApi(query: String) {
         Log.i("PlantsViewModel", "currentPage: ${currentPage}")
         try {
-            plantManager.getPlantsList(query = query, page = currentPage)
+            plantsManager.getPlantsList(query = query, page = currentPage)
                 .catch { e ->
                     Log.e("PlantsViewModel", "API error: ${e.message}")
                     _error.value = "Failed to fetch plants from server: ${e.message}"
@@ -125,7 +120,7 @@ class PlantsViewModel(
         viewModelScope.launch {
             val nextPage = currentPage + 1
 
-            plantManager.getPlantsList(query = _searchQuery.value, page = nextPage)
+            plantsManager.getPlantsList(query = _searchQuery.value, page = nextPage)
                 .catch { exception ->
                     _error.value = exception.message
                     _isLoading.value = false
@@ -175,17 +170,17 @@ class PlantsViewModel(
 /**
  * Purpose: Factory for creating PlantsViewModel instances
  *
- * @param plantManager Manager that handles fetching plant data from API
+ * @param plantsManager Manager that handles fetching plant data from API
  * @param plantsDao Data access object for local plant database operations
  */
 class PlantsViewModelFactory(
-    private val plantManager: PlantManager,
+    private val plantsManager: PlantsManager,
     private val plantsDao: PlantsDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PlantsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PlantsViewModel(plantManager, plantsDao) as T
+            return PlantsViewModel(plantsManager, plantsDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

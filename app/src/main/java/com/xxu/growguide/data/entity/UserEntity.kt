@@ -9,9 +9,6 @@ import androidx.room.PrimaryKey
  */
 @Entity(
     tableName = "users",
-    indices = [
-        Index("email", unique = true)
-    ]
 )
 data class UserEntity(
     @PrimaryKey

@@ -1,4 +1,4 @@
-package com.xxu.growguide.ui.viewmodels
+package com.xxu.growguide.viewmodels
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.xxu.growguide.api.PlantsManager
 import com.xxu.growguide.data.database.PlantsDao
 import com.xxu.growguide.data.entity.PlantsEntity
+import com.xxu.growguide.data.entity.UserPlantsEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,9 +21,8 @@ import kotlinx.coroutines.launch
  * @param plantsManager Manager that handles fetching plant data from API
  * @param plantsDao Data access object for local plant database operations
  */
-class PlantDetailViewModel(
-    private val plantsManager: PlantsManager,
-    private val plantsDao: PlantsDao
+class AddPlantViewModel(
+    private val plantsManager: PlantsManager
 ) : ViewModel() {
 
     // State for the plant detail
@@ -55,16 +55,32 @@ class PlantDetailViewModel(
                 plantsManager.getPlantDetail(plantId)
                     .flowOn(Dispatchers.IO)
                     .catch { e ->
-                        Log.e("PlantDetailViewModel", "API error: ${e.message}")
+                        Log.e("AddPlantViewModel", "API error: ${e.message}")
                     }
                     .collect { plant ->
                         _plantDetail.value = plant
                         _isLoading.value = false
                     }
             } catch (e: Exception) {
-                Log.e("PlantDetailViewModel", "Error loading plant detail: ${e.message}")
+                Log.e("AddPlantViewModel", "Error loading plant detail: ${e.message}")
                 _error.value = "Failed to load plant details: ${e.message}"
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun addUserPlant(plant: UserPlantsEntity?) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            try {
+                plantsManager.saveUserPlant(plant)
+                _isLoading.value = false
+                Log.i("AddPlantViewModel", "Successfully save user plant to database!")
+            } catch (e: Exception) {
+                _isLoading.value = false
+                _error.value = "Failed to save plant to garden: ${e.message}"
             }
         }
     }
@@ -74,16 +90,14 @@ class PlantDetailViewModel(
  * Purpose: Factory for creating PlantDetailViewModel instances
  *
  * @param plantsManager Manager that handles fetching plant data from API
- * @param plantsDao Data access object for local plant database operations
  */
-class PlantDetailViewModelFactory(
-    private val plantsManager: PlantsManager,
-    private val plantsDao: PlantsDao
+class AddPlantViewModelFactory(
+    private val plantsManager: PlantsManager
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(PlantDetailViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(AddPlantViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PlantDetailViewModel(plantsManager, plantsDao) as T
+            return AddPlantViewModel(plantsManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -8,8 +8,9 @@ package com.xxu.growguide.destinations
 sealed class Destination(val route: String) {
     object Home : Destination("Home")
     object Plants :  Destination("Plants")
-    object Community : Destination("Community")
+    object Community : Destination("Shared")
     object Profile : Destination("Profile")
+    object Garden : Destination("Garden")
     object Login : Destination("login")
 
     object AddPlant : Destination("add_plant") {
@@ -28,5 +29,11 @@ sealed class Destination(val route: String) {
         const val plantIdArg = "plantId"
         val routeWithArgs = "$route/{$plantIdArg}"
         fun createRoute(plantId: Int) = "$route/$plantId"
+    }
+
+    object GardenPlantDetail : Destination("garden_plant_detail") {
+        const val userPlantIdArg = "userPlantId"
+        val routeWithArgs = "$route/{$userPlantIdArg}"
+        fun createRoute(userPlantId: Long) = "$route/$userPlantId"
     }
 }
