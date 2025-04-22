@@ -41,6 +41,14 @@ class GardenPlantDetailViewModel(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    // State for deleting garden plant
+    private val _deletingSuccess = MutableStateFlow(false)
+    val deletingSuccess: StateFlow<Boolean> = _deletingSuccess
+
+    // State for watering garden plant
+    private val _wateringSuccess = MutableStateFlow(false)
+    val wateringSuccess: StateFlow<Boolean> = _wateringSuccess
+
 
     /**
      * Purpose: Get all plants for a specific user
@@ -101,14 +109,14 @@ class GardenPlantDetailViewModel(
                 plantsManager.getPlantDetail(plantId)
                     .flowOn(Dispatchers.IO)
                     .catch { e ->
-                        Log.e("PlantDetailViewModel", "API error: ${e.message}")
+                        Log.e("GardenPlantDetailViewModel", "API error: ${e.message}")
                     }
                     .collect { plant ->
                         _plantDetail.value = plant
                         _isLoading.value = false
                     }
             } catch (e: Exception) {
-                Log.e("PlantDetailViewModel", "Error loading plant detail: ${e.message}")
+                Log.e("GardenPlantDetailViewModel", "Error loading plant detail: ${e.message}")
                 _error.value = "Failed to load plant details: ${e.message}"
                 _isLoading.value = false
             }
@@ -122,21 +130,22 @@ class GardenPlantDetailViewModel(
      */
     fun recordWatering(userPlantId: Long?) {
         viewModelScope.launch {
-            _isLoading.value = true
             _error.value = null
+            _wateringSuccess.value = false
 
             try {
-                if (userPlantId != null) {
-                    plantsManager.removeUserPlant(userPlantId)
+                // Update watering timestamp through PlantManager
+                val success = userPlantId?.let { plantsManager.recordPlantWatering(it) }
+
+                if (success == true) {
+                    _wateringSuccess.value = true
                 } else {
-                    Log.e("GardenViewModel", "Error recording watering: invalid user plant ID")
-                    _error.value = "Invalid user plant ID"
+                    Log.e("GardenPlantDetailViewModel", "Error recording watering")
+                    _error.value = "Failed to update watering"
                 }
             } catch (e: Exception) {
-                Log.e("GardenViewModel", "Error recording watering: ${e.message}", e)
+                Log.e("GardenPlantDetailViewModel", "Error recording watering: ${e.message}", e)
                 _error.value = "Failed to update watering: ${e.message}"
-            } finally {
-                _isLoading.value = false
             }
         }
     }
@@ -148,32 +157,27 @@ class GardenPlantDetailViewModel(
      */
     fun removeUserPlant(userPlantId: Long) {
         viewModelScope.launch {
-            _isLoading.value = true
             _error.value = null
+            _deletingSuccess.value = false
 
             try {
-                plantsManager.removeUserPlant(userPlantId)
+                val success = plantsManager.removeUserPlant(userPlantId)
+                if (success) {
+                    _deletingSuccess.value = true
+                } else {
+                    Log.e("GardenPlantDetailViewModel", "Error removing plant")
+                    _error.value = "Failed to remove plant"
+                }
             } catch (e: Exception) {
-                Log.e("GardenViewModel", "Error removing plant: ${e.message}", e)
+                Log.e("GardenPlantDetailViewModel", "Error removing plant: ${e.message}", e)
                 _error.value = "Failed to remove plant: ${e.message}"
-            } finally {
-                _isLoading.value = false
             }
         }
-    }
-
-    /**
-     * Purpose: Clear any error messages
-     */
-    fun clearError() {
-        _error.value = null
     }
 }
 
 /**
  * Purpose: Factory for creating UserPlantViewModel instances
- *
- * @param userPlantDao Data access object for user plants database operations
  */
 class GardenPlantDetailViewModelFactory(
     private val plantsManager: PlantsManager

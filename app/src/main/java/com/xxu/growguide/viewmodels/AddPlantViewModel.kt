@@ -29,6 +29,10 @@ class AddPlantViewModel(
     private val _plantDetail = MutableStateFlow<PlantsEntity?>(null)
     val plantDetail: StateFlow<PlantsEntity?> = _plantDetail
 
+    // State for saving data
+    private val _savingSuccess = MutableStateFlow<Boolean>(false)
+    val savingSuccess: StateFlow<Boolean> = _savingSuccess
+
     // State for loading
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -71,16 +75,16 @@ class AddPlantViewModel(
 
     fun addUserPlant(plant: UserPlantsEntity?) {
         viewModelScope.launch {
-            _isLoading.value = true
             _error.value = null
+            _savingSuccess.value = false
 
             try {
                 plantsManager.saveUserPlant(plant)
-                _isLoading.value = false
+                _savingSuccess.value = true
                 Log.i("AddPlantViewModel", "Successfully save user plant to database!")
             } catch (e: Exception) {
-                _isLoading.value = false
                 _error.value = "Failed to save plant to garden: ${e.message}"
+                _savingSuccess.value = false
             }
         }
     }

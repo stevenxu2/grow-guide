@@ -5,6 +5,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -97,7 +98,7 @@ fun MockPlantsScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 20.dp)
         ) {
             PlantsHeader()
 
@@ -183,19 +184,23 @@ fun SearchPlant(
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                        Icon(
+                            Icons.Default.Clear,
+                            contentDescription = "Clear",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             },
             colors = SearchBarDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surfaceDim,
-                dividerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                dividerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                 inputFieldColors = SearchBarDefaults.inputFieldColors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -254,7 +259,8 @@ fun MockPlantList(
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(plants) { plant ->
             plant?.let {
@@ -297,30 +303,31 @@ private fun PlantCard(
     navController: NavHostController,
     onClick: () -> Unit
 ) {
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
+        ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                .border(1.dp, MaterialTheme.colorScheme.surfaceDim, shape = RoundedCornerShape(12.dp))
-                .clickable { onClick() }
-                .padding(8.dp),
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Plant image
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+                    .size(120.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 if (plant.defaultImage?.smallUrl?.isNotEmpty() == true) {
-                    // Load image from URL
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(plant.defaultImage.smallUrl)
@@ -329,7 +336,7 @@ private fun PlantCard(
                         contentDescription = plant.commonName,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(120.dp)
                     )
                 } else {
                     // Show placeholder
@@ -346,26 +353,29 @@ private fun PlantCard(
 
             // Plant details
             Column(
-                modifier = Modifier.weight(2f)
+                modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = plant.commonName.toString(),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = plant.scientificName?.firstOrNull().toString(),
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
                 )
             }
 
             // Add icon with shadow
             Card(
                 modifier = Modifier
+                    .padding(end = 8.dp)
                     .size(40.dp),
                 shape = CircleShape,
                 colors = CardDefaults.cardColors(

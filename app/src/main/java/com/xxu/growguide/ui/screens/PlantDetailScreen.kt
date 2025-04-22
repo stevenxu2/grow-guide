@@ -1,6 +1,7 @@
 package com.xxu.growguide.ui.screens
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -68,6 +69,7 @@ import com.xxu.growguide.api.PlantsManager
 import com.xxu.growguide.data.database.AppDatabase
 import com.xxu.growguide.data.database.PlantsDao
 import com.xxu.growguide.data.entity.PlantsEntity
+import com.xxu.growguide.ui.components.BackButton
 import com.xxu.growguide.ui.viewmodels.PlantDetailViewModel
 
 /**
@@ -163,7 +165,7 @@ fun PlantDetailScreen(
                                             .crossfade(true)
                                             .build(),
                                         contentDescription = plant.commonName,
-                                        contentScale = ContentScale.Crop,
+                                        contentScale = ContentScale.FillWidth,
                                         modifier = Modifier.fillMaxSize()
                                     )
                                 } else {
@@ -197,7 +199,7 @@ fun PlantDetailScreen(
                                 text = plant.commonName,
                                 style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
 
                             // Scientific name
@@ -306,26 +308,7 @@ fun PlantDetailScreen(
                     }
 
                     // Floating back button - always visible at top left
-                    Card(
-                        modifier = Modifier
-                            .padding(top = 12.dp, start = 12.dp)
-                            .size(40.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
-                        ),
-                        shape = CircleShape,
-                    ) {
-                        IconButton(
-                            onClick = { navController.navigateUp() },
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
+                    BackButton(navController)
                 }
 
             }
@@ -367,9 +350,10 @@ fun PlantBasicInfoCard(plant: PlantsEntity) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.outline
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainer)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -416,20 +400,20 @@ fun InfoRow(title: String, value: String, isLast: Boolean = false) {
             text = title,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         Text(
             text = value.replaceFirstChar { char -> char.uppercase() },
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 
     if (!isLast) {
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 4.dp),
-            color = MaterialTheme.colorScheme.background.copy(alpha = 0.2f)
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
         )
     }
 }

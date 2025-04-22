@@ -68,6 +68,7 @@ import com.xxu.growguide.R
 import com.xxu.growguide.api.PlantsManager
 import com.xxu.growguide.auth.AuthManager
 import com.xxu.growguide.destinations.Destination
+import com.xxu.growguide.ui.components.FloatingButton
 import com.xxu.growguide.ui.theme.Sunny
 import com.xxu.growguide.ui.viewmodels.GardenViewModel
 import com.xxu.growguide.ui.viewmodels.GardenViewModelFactory
@@ -99,6 +100,7 @@ fun GardenScreen(
     // Load garden plants
     LaunchedEffect(userId) {
         if (userId.isNotEmpty()) {
+            Log.i("GardenScreen", "getGardenPlants")
             viewModel.getGardenPlants(userId)
         }
     }
@@ -121,13 +123,13 @@ fun GardenScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 20.dp)
         ) {
             // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+                    .padding(vertical = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -142,20 +144,12 @@ fun GardenScreen(
                 val plantCount = gardenPlants.size
                 val plantCountText = if (plantCount == 1) "1 Plant" else "$plantCount Plants"
 
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text(
-                        text = plantCountText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
+                Text(
+                    text = plantCountText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             // Loading state
@@ -197,7 +191,7 @@ fun GardenScreen(
                             painter = painterResource(id = R.drawable.ic_plant_placeholder),
                             contentDescription = "Empty Garden",
                             modifier = Modifier.size(100.dp),
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
                         )
 
                         Text(
@@ -207,17 +201,18 @@ fun GardenScreen(
                         )
 
                         Text(
-                            text = "Start adding plants to your collection",
+                            text = "Start adding plants to your garden",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
 
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Button(
+                            modifier = Modifier.size(width = 250.dp, height = 50.dp),
                             onClick = { navController.navigate(Destination.Plants.route) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Sunny)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
@@ -256,7 +251,7 @@ fun GardenScreen(
                         )
                     }
 
-                    // Add some bottom spacing
+                    // Add some bottom spacing for display the floating add button
                     item {
                         Spacer(modifier = Modifier.height(80.dp))
                     }
@@ -264,25 +259,25 @@ fun GardenScreen(
             }
         }
 
-        // Floating action button to add new plants
-        FloatingActionButton(
-            onClick = { navController.navigate(Destination.Plants.route) },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            containerColor = Sunny,
-            contentColor = Color.White
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add plant"
-            )
+        if (gardenPlants.isNotEmpty()) {
+            // Floating action button to add new plants
+            FloatingButton(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                description = "Add a new Plant",
+            ) {
+                navController.navigate(Destination.Plants.route)
+            }
         }
 
         // Delete confirmation dialog
         if (showDeleteDialog && plantToDelete != null) {
             AlertDialog(
-                onDismissRequest = { showDeleteDialog = false },
+                onDismissRequest = {
+                    showDeleteDialog = false
+                    plantToDelete = null
+                },
                 title = { Text("Remove Plant") },
                 text = { Text("Are you sure you want to remove this plant from your garden?") },
                 confirmButton = {
@@ -306,7 +301,7 @@ fun GardenScreen(
                             plantToDelete = null
                         }
                     ) {
-                        Text("Cancel")
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             )
@@ -337,6 +332,14 @@ fun GardenPlantCard(
     val dateFormatter = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
     val plantedDate = dateFormatter.format(Date(userPlant!!.plantingDate))
 
+    // Calculate days since planting
+    val daysSincePlanting = ((System.currentTimeMillis() - userPlant.plantingDate) / (1000 * 60 * 60 * 24)).toInt()
+    val plantedAgo = when {
+        daysSincePlanting == 0 -> "Planted today"
+        daysSincePlanting == 1 -> "Planted yesterday"
+        else -> "Planted $daysSincePlanting days ago"
+    }
+
     // Format last watered date with "time ago" format
     val lastWateredText = userPlant.lastWateredDate?.let { timestamp ->
         val timeAgo = DateUtils.getRelativeTimeSpanString(
@@ -352,7 +355,7 @@ fun GardenPlantCard(
             .fillMaxWidth()
             .clickable { onItemClick(userPlant.userPlantId) },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
         ),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(
@@ -365,20 +368,17 @@ fun GardenPlantCard(
             // Plant image and info header
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Plant image
                 Box(
                     modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                        .size(120.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     if (!userPlant.imageUri.isNullOrEmpty()) {
-                        // User's own image of the plant
                         AsyncImage(
                             model = ImageRequest.Builder(context)
                                 .data(userPlant.imageUri)
@@ -399,11 +399,12 @@ fun GardenPlantCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Plant info
                 Column(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
                 ) {
                     // Plant name - use nickname if available, otherwise common name
                     val plantName = userPlant.nickname ?: plant?.commonName
@@ -411,20 +412,11 @@ fun GardenPlantCard(
                         text = plantName!!,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    // Scientific name
-                    Text(
-                        text = plant?.scientificName ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Planting date
                     Row(
@@ -434,11 +426,11 @@ fun GardenPlantCard(
                             imageVector = Icons.Default.DateRange,
                             contentDescription = "Planted date",
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.tertiary
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Planted on $plantedDate",
+                            text = "$plantedAgo ",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -464,15 +456,17 @@ fun GardenPlantCard(
                     }
                 }
 
+                Spacer(modifier = Modifier.width(8.dp))
+
                 // Action buttons
                 Column(
-                    horizontalAlignment = Alignment.End
+                    modifier = Modifier.padding(end = 16.dp),
                 ) {
                     // Water button
                     IconButton(
                         onClick = { onWaterClick(userPlant.userPlantId) },
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(28.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primaryContainer)
                     ) {
@@ -481,106 +475,6 @@ fun GardenPlantCard(
                             contentDescription = "Water plant",
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Delete button
-                    IconButton(
-                        onClick = { onDeleteClick(userPlant.userPlantId) },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.errorContainer)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Remove plant",
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-
-            // Notes section (if available)
-            userPlant.notes?.let { notes ->
-                if (notes.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .padding(bottom = 16.dp)
-                    ) {
-                        Text(
-                            text = "Notes:",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Text(
-                            text = notes,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
-
-            // Care schedule reminder - simplified version
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Watering reminder based on plant.watering value
-                    val wateringSchedule = when {
-                        plant!!.watering.contains("frequent", ignoreCase = true) -> "Water every 2-3 days"
-                        plant.watering.contains("average", ignoreCase = true) -> "Water weekly"
-                        plant.watering.contains("minimum", ignoreCase = true) -> "Water every 2-3 weeks"
-                        else -> "Check soil regularly"
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Care reminder",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = wateringSchedule,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-
-                    // Set reminder button (UI only, not functional in this version)
-                    TextButton(
-                        onClick = { /* Set reminder - not implemented */ },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Text(
-                            text = "Set Reminder",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
                         )
                     }
                 }

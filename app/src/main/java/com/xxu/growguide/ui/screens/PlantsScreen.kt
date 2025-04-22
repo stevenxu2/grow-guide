@@ -155,7 +155,7 @@ fun PlantsHeader(){
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = 20.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -215,7 +215,7 @@ fun SearchPlant(
                 }
             },
             colors = SearchBarDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 dividerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 inputFieldColors = SearchBarDefaults.inputFieldColors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,

@@ -169,7 +169,6 @@ class MainActivity : ComponentActivity() {
                     // Main App
                     val navController = rememberNavController()
 
-                    //TestAddPlantScreen()
                     App(
                         navController = navController,
                         database = database,
@@ -181,7 +180,7 @@ class MainActivity : ComponentActivity() {
                         authViewModel = authViewModel
                     )
 
-                    // Show login dialog when needed
+                    // Show Login dialog when needed
                     if (showLoginDialog) {
                         Box(
                             modifier = Modifier
@@ -291,8 +290,9 @@ fun App(
     val isLoggedIn by remember { authViewModel.isLoggedIn }
 
     // Check if we're on a detail screen that should hide navigation
-    val isHiddenNav = currentRoute?.startsWith("plant_detail/") == true ||
-                currentRoute?.startsWith("add_plant/") == true
+    val isHiddenNav = currentRoute?.startsWith("plant_detail") == true ||
+            currentRoute?.startsWith("add_plant") == true ||
+            currentRoute?.startsWith("garden_plant_detail") == true
 
     Scaffold(
         modifier = Modifier
@@ -306,7 +306,10 @@ fun App(
         },
         floatingActionButton = {
             if (currentRoute == Destination.Home.route) {
-                FloatingButton("Add a new Plant") {
+                FloatingButton(
+                    modifier = Modifier,
+                    description = "Add a new Plant"
+                ) {
                     // Check if logged in before adding a plant
                     if (isLoggedIn) {
                         navController.navigate(Destination.Plants.route)

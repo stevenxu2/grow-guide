@@ -137,10 +137,10 @@ fun TodayTasks(){
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "See more",
+                text = "See all",
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.outlineVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -222,10 +222,10 @@ fun MyPlants(){
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "See more",
+                text = "See all",
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -286,15 +286,14 @@ private fun MyPlantsItem() {
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    lineHeight = 20.sp
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 24.sp
                 )
                 Text(
                     text = "Growing well",
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 16.sp,
                 )
             }
         }
@@ -347,10 +346,10 @@ fun CommunityUpdates(){
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "See more",
+                text = "See all",
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
