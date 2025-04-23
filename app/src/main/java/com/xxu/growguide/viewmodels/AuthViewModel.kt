@@ -1,22 +1,27 @@
 package com.xxu.growguide.viewmodels
 
 import android.app.Application
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.xxu.growguide.api.PlantsManager
 import com.xxu.growguide.auth.AuthManager
+import com.xxu.growguide.data.entity.UserEntity
+import com.xxu.growguide.ui.viewmodels.GardenPlantDetailViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Purpose: ViewModel for authentication related functionality
  *
- * Manages user authentication state and login dialog visibility
- *
- * @param application Application context used to initialize the auth manager
  */
-class AuthViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val authManager = AuthManager.getInstance(application.applicationContext)
+class AuthViewModel(
+    private val authManager: AuthManager
+) : ViewModel() {
 
     // UI State
     private val _showLoginDialog = MutableStateFlow(false)
@@ -24,12 +29,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     // Expose auth state from manager
     val isLoggedIn = authManager.isLoggedIn
+    val authError = authManager.authError
+    val isLoading = authManager.isLoading
+
+    // User data
     val currentUser = authManager.currentUser
 
     /**
      * Purpose: Show the login dialog
-     *
-     * Sets the dialog visibility state to true
      */
     fun showLogin() {
         _showLoginDialog.value = true
@@ -37,26 +44,51 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Purpose: Hide the login dialog
-     *
-     * Sets the dialog visibility state to false
      */
     fun hideLogin() {
         _showLoginDialog.value = false
     }
 
     /**
+     * Purpose: Sign in with email and password
+     */
+    suspend fun signIn(email: String, password: String): Boolean {
+        return authManager.signIn(email, password)
+    }
+
+    /**
+     * Purpose: Sign up with email, password and display name
+     */
+    suspend fun signUp(email: String, password: String, displayName: String): Boolean {
+        return authManager.signUp(email, password, displayName)
+    }
+
+    /**
      * Purpose: Sign out the current user
-     *
-     * Delegates to the AuthManager to handle the sign out process
      */
     fun signOut() {
         authManager.signOut()
     }
 
     /**
-     * Purpose: Get the auth manager instance
-     *
-     * @return The AuthManager singleton instance
+     * Purpose: Get current user data synchronously
      */
-    fun getAuthManager() = authManager
+    suspend fun getCurrentUser(): UserEntity? {
+        return authManager.getCurrentUserFromDb()
+    }
+}
+
+/**
+ * Purpose: Factory for creating AuthViewModel instances
+ */
+class AuthViewModelFactory(
+    private val authManager: AuthManager
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return AuthViewModel(authManager) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }

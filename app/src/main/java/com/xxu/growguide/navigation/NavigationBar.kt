@@ -70,16 +70,16 @@ fun BottomNav(navController: NavController) {
             label = { Text(text = Destination.Garden.route) },
             colors = itemColors
         )
-        NavigationBarItem(
-            selected = currentDestination?.route == Destination.Community.route,
-            onClick = { navController.navigate(Destination.Community.route) {
-                popUpTo(Destination.Community.route)
-                launchSingleTop = true
-            }},
-            icon = { Icon(painter = icCommunity, contentDescription = null)},
-            label = { Text(text = Destination.Community.route) },
-            colors = itemColors
-        )
+//        NavigationBarItem(
+//            selected = currentDestination?.route == Destination.Community.route,
+//            onClick = { navController.navigate(Destination.Community.route) {
+//                popUpTo(Destination.Community.route)
+//                launchSingleTop = true
+//            }},
+//            icon = { Icon(painter = icCommunity, contentDescription = null)},
+//            label = { Text(text = Destination.Community.route) },
+//            colors = itemColors
+//        )
         NavigationBarItem(
             selected = currentDestination?.route == Destination.Profile.route,
             onClick = { navController.navigate(Destination.Profile.route) {

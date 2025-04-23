@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -31,14 +32,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.xxu.growguide.R
+import com.xxu.growguide.auth.AuthManager
+import com.xxu.growguide.viewmodels.AuthViewModel
+import com.xxu.growguide.viewmodels.AuthViewModelFactory
 import com.xxu.growguide.viewmodels.ThemeViewModel
 
 /**
@@ -50,7 +56,15 @@ import com.xxu.growguide.viewmodels.ThemeViewModel
  * @param themeViewModel ViewModel that manages theme preferences
  */
 @Composable
-fun ProfileScreen(navController: NavHostController, innerPadding: PaddingValues, scrollState: ScrollState, themeViewModel: ThemeViewModel){
+fun ProfileScreen(
+    navController: NavHostController,
+    innerPadding: PaddingValues,
+    scrollState: ScrollState,
+    themeViewModel: ThemeViewModel
+){
+    val authManager = AuthManager.getInstance(LocalContext.current.applicationContext)
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager))
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -59,8 +73,12 @@ fun ProfileScreen(navController: NavHostController, innerPadding: PaddingValues,
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         ProfileHeader()
-        ProfileBanner()
+        //ProfileBanner()
         CommonSettings(themeViewModel)
+
+        LogOut(
+            onClick = { authViewModel.signOut() }
+        )
     }
 }
 
@@ -100,7 +118,7 @@ fun ProfileHeader(){
             text = "My Profile",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
-            fontSize = 32.sp,
+            fontSize = 24.sp,
             color = MaterialTheme.colorScheme.onSurface
         )
     }
@@ -121,7 +139,7 @@ fun ProfileBanner(){
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                 .padding(16.dp)
                 .height(150.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -188,7 +206,7 @@ fun CommonSettings(themeViewModel: ThemeViewModel) {
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         ThemeToggle(themeViewModel)
@@ -196,7 +214,7 @@ fun CommonSettings(themeViewModel: ThemeViewModel) {
         HorizontalDivider(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             thickness = 1.dp,
-            color = MaterialTheme.colorScheme.surfaceContainer
+            color = MaterialTheme.colorScheme.surfaceContainerLow
         )
 
         LanguageSetting()
@@ -204,7 +222,7 @@ fun CommonSettings(themeViewModel: ThemeViewModel) {
         HorizontalDivider(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             thickness = 1.dp,
-            color = MaterialTheme.colorScheme.surfaceContainer
+            color = MaterialTheme.colorScheme.surfaceContainerLow
         )
 
         AccountManagement()
@@ -212,22 +230,13 @@ fun CommonSettings(themeViewModel: ThemeViewModel) {
         HorizontalDivider(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             thickness = 1.dp,
-            color = MaterialTheme.colorScheme.surfaceContainer
+            color = MaterialTheme.colorScheme.surfaceContainerLow
         )
 
         MoreSettings()
     }
 
     Spacer(modifier = Modifier.height(16.dp))
-
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        LogOut()
-    }
 }
 
 /**
@@ -323,19 +332,30 @@ fun MoreSettings() {
  * Purpose: Provides option for user to log out of their account
  */
 @Composable
-fun LogOut() {
+fun LogOut( onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = "Log Out", Modifier.weight(1f))
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-            contentDescription = "Select language",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        Text(
+            text = "Log Out",
+            Modifier
+                .weight(1f)
+                .padding(start = 8.dp)
         )
+        IconButton(
+            onClick = onClick
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                contentDescription = "Select language",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }

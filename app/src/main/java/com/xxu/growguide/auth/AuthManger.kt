@@ -1,9 +1,11 @@
 package com.xxu.growguide.auth
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.xxu.growguide.data.database.AppDatabase
 import com.xxu.growguide.data.entity.UserEntity
 import kotlinx.coroutines.Dispatchers
@@ -25,11 +27,14 @@ class AuthManager private constructor(private val context: Context) {
     val currentUser = mutableStateOf<FirebaseUser?>(null)
     val isLoggedIn = mutableStateOf(false)
     val authError = mutableStateOf<String?>(null)
+    val isLoading = mutableStateOf(false)
 
     init {
         // Set initial state
         currentUser.value = auth.currentUser
         isLoggedIn.value = auth.currentUser != null
+
+        Log.i("Plant-AuthManager", "currentUser: ${currentUser.value}")
 
         // Listen for auth state changes
         auth.addAuthStateListener { firebaseAuth ->
@@ -47,6 +52,7 @@ class AuthManager private constructor(private val context: Context) {
      */
     suspend fun signIn(email: String, password: String): Boolean {
         return try {
+            isLoading.value = true
             authError.value = null
             val result = auth.signInWithEmailAndPassword(email, password).await()
             result.user?.let { user ->
@@ -56,6 +62,8 @@ class AuthManager private constructor(private val context: Context) {
         } catch (e: Exception) {
             authError.value = e.message
             false
+        } finally {
+            isLoading.value = false
         }
     }
 
@@ -69,9 +77,16 @@ class AuthManager private constructor(private val context: Context) {
      */
     suspend fun signUp(email: String, password: String, displayName: String): Boolean {
         return try {
+            isLoading.value = true
             authError.value = null
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             result.user?.let { user ->
+                // Update the display name in Firebase
+                val profileUpdates = UserProfileChangeRequest.Builder()
+                    .setDisplayName(displayName)
+                    .build()
+                user.updateProfile(profileUpdates).await()
+
                 // Create user in local database
                 val newUser = UserEntity(
                     userId = user.uid,
@@ -88,6 +103,8 @@ class AuthManager private constructor(private val context: Context) {
         } catch (e: Exception) {
             authError.value = e.message
             false
+        } finally {
+            isLoading.value = false
         }
     }
 
@@ -141,7 +158,6 @@ class AuthManager private constructor(private val context: Context) {
             insertUserToDb(newUser)
         } else {
             // Update last active time
-            // Implement this if needed
         }
     }
 
@@ -153,6 +169,7 @@ class AuthManager private constructor(private val context: Context) {
     private suspend fun insertUserToDb(user: UserEntity) {
         withContext(Dispatchers.IO) {
             database.userDao().insertUser(user)
+            Log.i("Plant-AuthManager", "Successfully insert a user into database.")
         }
     }
 

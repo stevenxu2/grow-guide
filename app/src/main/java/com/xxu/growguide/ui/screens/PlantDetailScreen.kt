@@ -60,6 +60,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -71,6 +72,9 @@ import com.xxu.growguide.data.database.PlantsDao
 import com.xxu.growguide.data.entity.PlantsEntity
 import com.xxu.growguide.ui.components.BackButton
 import com.xxu.growguide.ui.viewmodels.PlantDetailViewModel
+import com.xxu.growguide.ui.viewmodels.PlantDetailViewModelFactory
+import com.xxu.growguide.viewmodels.AuthViewModel
+import com.xxu.growguide.viewmodels.AuthViewModelFactory
 
 /**
  * Purpose: Displays detailed information about a specific plant.
@@ -85,10 +89,11 @@ fun PlantDetailScreen(
     plantId: Int,
     navController: NavHostController,
     innerPadding: PaddingValues,
-    viewModel: PlantDetailViewModel,
     plantsManager: PlantsManager,
-    database: AppDatabase
 ) {
+    val database = AppDatabase.getInstance(LocalContext.current.applicationContext)
+    val viewModel: PlantDetailViewModel = viewModel(factory = PlantDetailViewModelFactory(plantsManager, database.plantsDao()))
+
     // Collect states from ViewModel
     val plantDetail by viewModel.plantDetail.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()

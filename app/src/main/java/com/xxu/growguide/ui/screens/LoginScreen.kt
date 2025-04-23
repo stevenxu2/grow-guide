@@ -1,5 +1,6 @@
 package com.xxu.growguide.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -50,9 +52,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.xxu.growguide.auth.AuthManager
 import com.xxu.growguide.ui.theme.Sunny
+import com.xxu.growguide.ui.viewmodels.GardenPlantDetailViewModel
+import com.xxu.growguide.ui.viewmodels.GardenPlantDetailViewModelFactory
+import com.xxu.growguide.viewmodels.AuthViewModel
+import com.xxu.growguide.viewmodels.AuthViewModelFactory
 import kotlinx.coroutines.launch
 
 /**
@@ -62,7 +69,7 @@ import kotlinx.coroutines.launch
  * It handles email and password input, authentication state, and error messages.
  *
  * @param navController Navigation controller for screen navigation
- * @param authManager Authentication manager that handles login/signup operations
+ * @param authViewModel ViewModel that manages authentication state
  * @param onDismiss Callback function to close the login screen when authentication is complete
  */
 @Composable
@@ -71,32 +78,44 @@ fun LoginScreen(
     authManager: AuthManager,
     onDismiss: () -> Unit
 ) {
+    val viewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager))
+
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var showSignUp by remember { mutableStateOf(false) }
     var displayName by remember { mutableStateOf("") }
 
+    // Get states from ViewModel
+    val isLoading by viewModel.isLoading
+    val isLoggedIn by viewModel.isLoggedIn
+    val authError by viewModel.authError
+
     // Show error in snackbar if there's an auth error
-    LaunchedEffect(authManager.authError.value) {
-        authManager.authError.value?.let { error ->
+    LaunchedEffect(authError) {
+        authError?.let { error ->
+            Log.e("Plant-LoginScreen", "Auth error detected: $error")
             snackbarHostState.showSnackbar(error)
         }
     }
 
     // Dismiss login screen if user is already logged in
-    LaunchedEffect(authManager.isLoggedIn.value) {
-        if (authManager.isLoggedIn.value) {
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
             onDismiss()
         }
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(bottom = 650.dp)
+            )
+        },
         topBar = {
             Row(
                 modifier = Modifier
@@ -104,12 +123,12 @@ fun LoginScreen(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
-                    )
-                }
+//                IconButton(onClick = onDismiss) {
+//                    Icon(
+//                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+//                        contentDescription = "Back"
+//                    )
+//                }
 
                 Text(
                     text = if (showSignUp) "Create Account" else "Login",
@@ -124,8 +143,9 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 24.dp)
+                .padding(top = 60.dp),
+            //contentAlignment = Alignment.Center
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -169,8 +189,11 @@ fun LoginScreen(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next
                     ),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     )
@@ -194,8 +217,11 @@ fun LoginScreen(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
                         ),
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
@@ -228,8 +254,11 @@ fun LoginScreen(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     )
@@ -241,23 +270,21 @@ fun LoginScreen(
                 Button(
                     onClick = {
                         if (email.isNotEmpty() && password.isNotEmpty()) {
-                            isLoading = true
                             scope.launch {
                                 val success = if (showSignUp) {
                                     if (displayName.isEmpty()) {
                                         snackbarHostState.showSnackbar("Display name is required")
                                         false
                                     } else {
-                                        authManager.signUp(email, password, displayName)
+                                        viewModel.signUp(email, password, displayName)
                                     }
                                 } else {
-                                    authManager.signIn(email, password)
+                                    viewModel.signIn(email, password)
                                 }
 
                                 if (success) {
                                     onDismiss()
                                 }
-                                isLoading = false
                             }
                         } else {
                             scope.launch {
@@ -269,7 +296,7 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                     enabled = !isLoading
                 ) {
                     if (isLoading) {

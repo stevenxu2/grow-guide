@@ -114,7 +114,8 @@ fun OnboardingScreen(
                     ) {
                         Text(
                             text = "Skip",
-                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -174,13 +175,13 @@ fun OnboardingScreen(
                                 .height(56.dp),
                             onClick = onFinishOnboarding,
                             shape = RoundedCornerShape(24.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                         ) {
                             Text(
                                 text = "Get Started",
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = MaterialTheme.colorScheme.onSecondary
                             )
                         }
                     } else {
@@ -194,13 +195,13 @@ fun OnboardingScreen(
                                 }
                             },
                             shape = RoundedCornerShape(24.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                         ) {
                             Text(
                                 text = "Next",
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSecondary
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -230,6 +231,7 @@ fun OnboardingPageContent(page: OnboardingPage) {
             lineHeight = 40.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 20.dp)
         )
 
@@ -239,6 +241,7 @@ fun OnboardingPageContent(page: OnboardingPage) {
             fontSize = 18.sp,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(bottom = 80.dp),
         )
 

@@ -107,7 +107,7 @@ fun PlantsScreen(
         ) {
             PlantsHeader()
 
-            SearchPlant(viewModel)
+            SearchPlant(viewModel = viewModel)
 
             if (isLoading && plants.isEmpty()) {
                 // Show loading indicator when initially loading
@@ -204,19 +204,23 @@ fun SearchPlant(
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Clear",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             },
             colors = SearchBarDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                dividerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                dividerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                 inputFieldColors = SearchBarDefaults.inputFieldColors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -277,7 +281,8 @@ fun PlantList(
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(plants) { plant ->
             plant?.let {
@@ -320,26 +325,28 @@ private fun PlantCard(
     navController: NavHostController,
     onClick: () -> Unit
 ) {
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
+        ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                .border(1.dp, MaterialTheme.colorScheme.surfaceDim, shape = RoundedCornerShape(12.dp))
-                .clickable { onClick() }
-                .padding(8.dp),
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Plant image
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+                    .size(120.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 if (plant.defaultImage?.smallUrl?.isNotEmpty() == true) {
@@ -352,7 +359,7 @@ private fun PlantCard(
                         contentDescription = plant.commonName,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(120.dp)
                     )
                 } else {
                     // Show placeholder
@@ -360,7 +367,7 @@ private fun PlantCard(
                         modifier = Modifier.size(80.dp),
                         painter = painterResource(id = R.drawable.ic_plant_placeholder),
                         contentDescription = "Plant Placeholder",
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onTertiaryContainer)
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer)
                     )
                 }
             }
@@ -373,29 +380,32 @@ private fun PlantCard(
             ) {
                 Text(
                     text = plant.commonName.toString(),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = plant.scientificName?.firstOrNull() ?: "",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = plant.scientificName?.firstOrNull().toString(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
                 )
             }
 
             // Add icon with shadow
             Card(
                 modifier = Modifier
+                    .padding(end = 8.dp)
                     .size(40.dp),
                 shape = CircleShape,
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
                 ),
                 elevation = CardDefaults.cardElevation(
-                    defaultElevation = 4.dp  // Adjust this value to control shadow intensity
+                    defaultElevation = 4.dp
                 )
             ) {
                 Box(

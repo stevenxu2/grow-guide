@@ -111,8 +111,8 @@ fun GardenScreen(
     val error by viewModel.error.collectAsState()
 
     // Delete confirmation dialog state
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    var plantToDelete by remember { mutableStateOf<Long?>(null) }
+    var showWaterDialog by remember { mutableStateOf(false) }
+    var plantToWater by remember { mutableStateOf<Long?>(null) }
 
     Box(
         modifier = Modifier
@@ -241,12 +241,9 @@ fun GardenScreen(
                             onItemClick = { userPlantId ->
                                 navController.navigate("garden_plant_detail/$userPlantId")
                             },
-                            onDeleteClick = { userPlantId ->
-                                plantToDelete = userPlantId
-                                showDeleteDialog = true
-                            },
                             onWaterClick = { userPlantId ->
-                                viewModel.recordWatering(userPlantId)
+                                showWaterDialog = true
+                                plantToWater = userPlantId
                             }
                         )
                     }
@@ -272,33 +269,33 @@ fun GardenScreen(
         }
 
         // Delete confirmation dialog
-        if (showDeleteDialog && plantToDelete != null) {
+        if (showWaterDialog && plantToWater != null) {
             AlertDialog(
                 onDismissRequest = {
-                    showDeleteDialog = false
-                    plantToDelete = null
+                    showWaterDialog = false
+                    plantToWater = null
                 },
-                title = { Text("Remove Plant") },
-                text = { Text("Are you sure you want to remove this plant from your garden?") },
+                title = { Text("Water Plant") },
+                text = { Text("Record that you've watered this plant today?") },
                 confirmButton = {
                     Button(
                         onClick = {
-                            plantToDelete?.let { userPlantId ->
-                                viewModel.removeUserPlant(userPlantId)
+                            plantToWater?.let { userPlantId ->
+                                viewModel.recordWatering(userPlantId)
                             }
-                            showDeleteDialog = false
-                            plantToDelete = null
+                            showWaterDialog = false
+                            plantToWater = null
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Remove")
+                        Text("Yes, I watered it")
                     }
                 },
                 dismissButton = {
                     TextButton(
                         onClick = {
-                            showDeleteDialog = false
-                            plantToDelete = null
+                            showWaterDialog = false
+                            plantToWater = null
                         }
                     ) {
                         Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -314,14 +311,12 @@ fun GardenScreen(
  *
  * @param userPlantWithDetails Contains the user plant entity and its related plant details
  * @param onItemClick Callback for when the card is clicked
- * @param onDeleteClick Callback for when the delete button is clicked
  * @param onWaterClick Callback for when the water button is clicked
  */
 @Composable
 fun GardenPlantCard(
     userPlantWithDetails: UserPlantWithDetails?,
     onItemClick: (Long) -> Unit,
-    onDeleteClick: (Long) -> Unit,
     onWaterClick: (Long) -> Unit
 ) {
     val context = LocalContext.current
@@ -464,7 +459,7 @@ fun GardenPlantCard(
                 ) {
                     // Water button
                     IconButton(
-                        onClick = { onWaterClick(userPlant.userPlantId) },
+                        onClick = { onWaterClick(userPlantWithDetails.userPlant.userPlantId) },
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)

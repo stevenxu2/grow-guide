@@ -638,7 +638,7 @@ fun WateringStatus(
     // Set watering progress specifically for never-watered plants
     val wateringProgress = if (gardenPlant.lastWateredDate == null) {
         // If never watered, show empty progress bar
-        0f
+        .1f
     } else {
         // Calculate watering status for plants that have been watered before
         val lastWatered = gardenPlant.lastWateredDate
@@ -647,7 +647,7 @@ fun WateringStatus(
         // Reverse the progress calculation - starts at 1.0 (full) and decreases to 0.0 (empty)
         if (wateringDays > 0) {
             // Clamp between 0 and 1
-            (1f - (daysSinceWatering.toFloat() / wateringDays.toFloat())).coerceIn(0f, 1f)
+            (1f - (daysSinceWatering.toFloat() / wateringDays.toFloat())).coerceIn(0.1f, 1f)
         } else 1f
     }
 
