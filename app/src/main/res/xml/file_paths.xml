@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- For cache directory -->
+    <cache-path name="shared_images" path="/" />
+
+    <!-- For files directory -->
+    <files-path name="plant_images" path="/" />
+</paths>

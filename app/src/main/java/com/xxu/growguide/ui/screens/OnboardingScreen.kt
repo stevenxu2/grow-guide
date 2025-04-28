@@ -37,12 +37,26 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xxu.growguide.R
-import com.xxu.growguide.data.models.OnboardingPage
 import com.xxu.growguide.ui.theme.Sunny
 import kotlinx.coroutines.launch
 
 /**
- * Show the onboarding pages
+ * Purpose: Data class representing a single onboarding page with image, title, and description
+ *
+ * @property image Resource ID for the page image
+ * @property title The title text to display
+ * @property description The description text to display
+ */
+data class OnboardingPage(
+    val image: Int,
+    val title: String,
+    val description: String
+)
+
+/**
+ * Purpose: Displays a multi-page onboarding screen with navigation controls
+ *
+ * @param onFinishOnboarding Callback function to invoke when onboarding is complete
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -100,7 +114,8 @@ fun OnboardingScreen(
                     ) {
                         Text(
                             text = "Skip",
-                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -155,10 +170,12 @@ fun OnboardingScreen(
                     // Show Get Started button on last page, otherwise show Next
                     if (pagerState.currentPage == pages.size - 1) {
                         Button(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
                             onClick = onFinishOnboarding,
                             shape = RoundedCornerShape(24.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Sunny)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                         ) {
                             Text(
                                 text = "Get Started",
@@ -169,19 +186,22 @@ fun OnboardingScreen(
                         }
                     } else {
                         Button(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
                             onClick = {
                                 coroutineScope.launch {
                                     pagerState.animateScrollToPage(pagerState.currentPage + 1)
                                 }
                             },
                             shape = RoundedCornerShape(24.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                         ) {
                             Text(
                                 text = "Next",
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.bodyLarge
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -192,7 +212,9 @@ fun OnboardingScreen(
 }
 
 /**
- * Show the onboarding page content
+ * Purpose: Renders the content for a single onboarding page
+ *
+ * @param page The OnboardingPage data to display
  */
 @Composable
 fun OnboardingPageContent(page: OnboardingPage) {
@@ -209,6 +231,7 @@ fun OnboardingPageContent(page: OnboardingPage) {
             lineHeight = 40.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 20.dp)
         )
 
@@ -218,6 +241,7 @@ fun OnboardingPageContent(page: OnboardingPage) {
             fontSize = 18.sp,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(bottom = 80.dp),
         )
 
@@ -234,6 +258,9 @@ fun OnboardingPageContent(page: OnboardingPage) {
     }
 }
 
+/**
+ * Purpose: Provides a preview of the OnboardingScreen in the Android Studio design view
+ */
 @Composable
 @Preview(showBackground = true)
 fun OnboardingScreenPreview() {

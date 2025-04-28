@@ -2,6 +2,12 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    // room database
+    alias(libs.plugins.devtoolsKsp)
+
+    // firebase
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -43,6 +49,37 @@ dependencies {
 
     // navigation
     implementation(libs.androidx.navigation.compose)
+
+    // location
+    implementation(libs.play.services.location)
+
+    // moshi
+    implementation(libs.moshi.kotlin)
+    implementation(libs.converter.moshi)
+
+    // coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+
+    // room database
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.common)
+    implementation(libs.androidx.ui.text.google.fonts)
+    annotationProcessor(libs.androidx.room.room.compiler)
+    ksp(libs.androidx.room.room.compiler)
+
+    // firebase
+    // Import the Firebase BoM
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.auth)
+
+    // extended icons
+    implementation(libs.androidx.material.icons.extended)
+
+    implementation(libs.logging.interceptor)
+    implementation(libs.androidx.activity.ktx)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

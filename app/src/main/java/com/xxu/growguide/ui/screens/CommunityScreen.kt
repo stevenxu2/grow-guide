@@ -39,8 +39,19 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 
+/**
+ * Purpose: Displays the community screen with posts and social features
+ *
+ * @param navController Navigation controller for screen navigation
+ * @param innerPadding Padding values from the parent layout
+ * @param scrollState State object for handling scrolling behavior
+ */
 @Composable
-fun CommunityScreen(navController: NavHostController, innerPadding: PaddingValues, scrollState: ScrollState) {
+fun CommunityScreen(
+    navController: NavHostController,
+    innerPadding: PaddingValues,
+    scrollState: ScrollState
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -54,7 +65,7 @@ fun CommunityScreen(navController: NavHostController, innerPadding: PaddingValue
 }
 
 /**
- * Display the header of the screen
+ * Purpose: Display the header of the community screen with title and add button
  */
 @Composable
 fun CommunityHeader(){
@@ -94,7 +105,11 @@ fun CommunityHeader(){
     Spacer(modifier = Modifier.height(16.dp))
 }
 
-
+/**
+ * Purpose: Creates a tabbed interface for navigating between different community views
+ *
+ * Displays tabs for "All Posts" and "Following" with corresponding content
+ */
 @Composable
 fun CommunityTabs() {
     val tabs = listOf("All Posts", "Following")
@@ -136,7 +151,7 @@ fun CommunityTabs() {
 }
 
 /**
- * All posts tab
+ * Purpose: Displays all community posts regardless of follow status
  */
 @Composable
 fun AllPosts() {
@@ -146,7 +161,7 @@ fun AllPosts() {
 }
 
 /**
- * Following tab
+ * Purpose: Displays posts only from users that the current user is following
  */
 @Composable
 fun Following() {
@@ -156,7 +171,11 @@ fun Following() {
 }
 
 /**
- * Define a plant data for testing
+ * Purpose: Data class representing a community post
+ *
+ * @property author The name of the post author
+ * @property title The title or main content of the post
+ * @property date When the post was created, in relative time format
  */
 data class PostData(
     val author: String,
@@ -165,7 +184,9 @@ data class PostData(
 )
 
 /**
- * List of my plants
+ * Purpose: Displays a scrollable list of community posts
+ *
+ * Currently uses test data, but would connect to real post data in production
  */
 @Composable
 fun PostList() {
@@ -199,6 +220,11 @@ fun PostList() {
     }
 }
 
+/**
+ * Purpose: Displays a single community post with author avatar, title, and date
+ *
+ * @param post The post data to display
+ */
 @Composable
 fun PostCard(post: PostData) {
     Row {

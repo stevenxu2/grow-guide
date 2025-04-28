@@ -1,14 +1,17 @@
 package com.xxu.growguide.ui.screens
 
-import androidx.compose.foundation.Image
+import android.text.format.DateUtils
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,28 +25,106 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.xxu.growguide.R
-import com.xxu.growguide.ui.theme.Sunny
+import com.xxu.growguide.api.PlantsManager
+import com.xxu.growguide.auth.AuthManager
+import com.xxu.growguide.destinations.Destination
+import com.xxu.growguide.ui.components.CompactAccountConversionReminder
+import com.xxu.growguide.ui.components.ConvertAccountDialog
+import com.xxu.growguide.ui.components.TaskType
+import com.xxu.growguide.ui.components.TodayTasks
+import com.xxu.growguide.ui.components.WeatherCard
+import com.xxu.growguide.ui.viewmodels.GardenViewModel
+import com.xxu.growguide.ui.viewmodels.GardenViewModelFactory
+import com.xxu.growguide.ui.viewmodels.UserPlantWithDetails
+import com.xxu.growguide.viewmodels.AuthViewModel
+import com.xxu.growguide.viewmodels.AuthViewModelFactory
+import com.xxu.growguide.viewmodels.WeatherViewModel
 
+/**
+ * Purpose: Displays the main home screen with user's garden information
+ *
+ * @param navController Navigation controller for screen navigation
+ * @param innerPadding Padding values from the parent layout
+ * @param scrollState State object for handling scrolling behavior
+ * @param weatherViewModel ViewModel that provides weather data and controls
+ */
 @Composable
-fun HomeScreen(navController: NavHostController, innerPadding: PaddingValues, scrollState: ScrollState) {
+fun HomeScreen(
+    navController: NavHostController,
+    innerPadding: PaddingValues,
+    scrollState: ScrollState,
+    weatherViewModel: WeatherViewModel,
+    plantsManager: PlantsManager
+) {
+    val authManager: AuthManager = AuthManager.getInstance(LocalContext.current.applicationContext)
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager))
+
+    val gardenViewModel: GardenViewModel = viewModel(factory = GardenViewModelFactory(plantsManager))
+
+    // Get current user ID
+    val currentUser = authManager.currentUser.value
+    val userId = currentUser?.uid ?: return
+
+    // Collect states from ViewModel
+    val gardenPlants by gardenViewModel.gardenPlants.collectAsState()
+    val gardenIsLoading by gardenViewModel.isLoading.collectAsState()
+    val gardenError by gardenViewModel.error.collectAsState()
+
+    // Collect weather state from ViewModel
+    val weatherState by weatherViewModel.weatherState.collectAsState()
+
+    // State for reminding guests to convert their account to permanent account
+    val isAnonymous by authViewModel.isAnonymous
+    var showCompactConvertRemind by remember { mutableStateOf(true) }
+    var showConvertDialog by remember { mutableStateOf(false) }
+
+
+    // Fetch weather data when the screen is first displayed
+    LaunchedEffect(Unit) {
+        weatherViewModel.fetchCurrentWeather()
+    }
+
+    // Load garden plants
+    LaunchedEffect(userId) {
+        if (userId.isNotEmpty()) {
+            gardenViewModel.getGardenPlants(userId)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -52,127 +133,132 @@ fun HomeScreen(navController: NavHostController, innerPadding: PaddingValues, sc
             .padding(horizontal = 20.dp, vertical = 16.dp)
             .verticalScroll(scrollState)
     ) {
-        HomeHeader()
-        WeatherCard()
-        TodayTasks()
-        MyPlants()
-        CommunityUpdates()
+
+        HomeHeader(
+            displayName = currentUser.displayName ?: ""
+        )
+
+        // Show the compact account convert reminder
+        if(showCompactConvertRemind && isAnonymous){
+            CompactAccountConversionReminder(
+                onCreateAccount = {
+                    showConvertDialog = true
+                },
+                onDismiss = {
+                    showCompactConvertRemind = false
+                }
+            )
+        }
+
+        WeatherCard(weatherViewModel, weatherState)
+
+        TodayTasks(
+            gardenPlants = gardenPlants,
+            onTaskClick = { userPlantId ->
+                navController.navigate("garden_plant_detail/$userPlantId")
+            },
+            onCheckTask = { userPlantId, taskType ->
+                // Handle task completion
+                if (taskType == TaskType.WATER_URGENT ||
+                    taskType == TaskType.WATER_SOON ||
+                    taskType == TaskType.WATER_ROUTINE ||
+                    taskType == TaskType.WATER_NEW_PLANT) {
+                    gardenViewModel.recordWatering(userPlantId)
+                }
+            },
+            onSeeAllClick = {
+                navController.navigate(Destination.Garden.route)
+            }
+        )
+
+        MyGarden(
+            gardenPlants = gardenPlants,
+            gardenIsLoading = gardenIsLoading,
+            gardenError = gardenError,
+            onClickAdd = { navController.navigate(Destination.Plants.route) },
+            onClickView = { userPlantId ->
+                navController.navigate("garden_plant_detail/$userPlantId") },
+            onClickSeeAll = { navController.navigate(Destination.Garden.route) }
+        )
+
+        //CommunityUpdates()
+
+        // Show the Convert Account Dialog
+        if (showConvertDialog && isAnonymous) {
+            authViewModel.clearErrors()
+            ConvertAccountDialog(
+                onDismiss = { showConvertDialog = false },
+                onSuccess = {
+                    showConvertDialog = false
+                    showCompactConvertRemind = false
+                },
+            )
+        }
     }
 }
 
 /**
- * Display the header of the screen
+ * Purpose: Displays the header section of the home screen with the "My Garden" title
  */
 @Composable
-fun HomeHeader(){
-    Row(
+fun HomeHeader(
+    displayName: String
+){
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
     ) {
         // Header
         Text(
-            text = "My Garden",
+            text = "Welcome back,",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             fontSize = 32.sp,
             color = MaterialTheme.colorScheme.onSurface
         )
-
-        // Profile icon
-//        Box(
-//            modifier = Modifier
-//                .size(48.dp)
-//                .clip(CircleShape)
-//                .background(MaterialTheme.colorScheme.primaryContainer)
-//                .padding(8.dp),
-//            contentAlignment = Alignment.Center
-//        ) {
-//            Icon(
-//                imageVector = Icons.Default.Person,
-//                contentDescription = "Profile",
-//                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-//                modifier = Modifier.size(24.dp)
-//            )
-//        }
+        Text(
+            text = displayName ?: "",
+            style = MaterialTheme.typography.headlineMedium,
+            fontSize = 26.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
-
     Spacer(modifier = Modifier.height(16.dp))
 }
 
 /**
- * Weather information
+ * Purpose: Displays a section showing the user's tasks for today and upcoming days
  */
 @Composable
-fun WeatherCard(){
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.tertiaryContainer)
-            .padding(16.dp),
-    ) {
-        Column(
-            modifier = Modifier.weight(3f)
-        ) {
-            Text(
-                text = "Today's weather",
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "18°C",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                fontSize = 32.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "Sunny, perfect for watering",
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Image(
-                modifier = Modifier.size(80.dp),
-                painter = painterResource(id = R.drawable.ic_sun),
-                contentDescription = "Sun",
-                colorFilter = ColorFilter.tint(Sunny)
-            )
-        }
-    }
-
-    Spacer(modifier = Modifier.height(24.dp))
-}
-
-/**
- * Display user's tasks
- */
-@Composable
-fun TodayTasks(){
+fun TodayTasks2(){
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .border(1.dp, MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(16.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp),
+                .padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Today's Tasks",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
+                fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "See all",
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -184,7 +270,10 @@ fun TodayTasks(){
 }
 
 /**
- * Task card to display a task
+ * Purpose: Displays a single task card with checkbox, title, and due date
+ *
+ * @param title The title or description of the task
+ * @param dueText Text indicating when the task is due
  */
 @Composable
 fun TaskCard(title: String, dueText: String) {
@@ -192,50 +281,31 @@ fun TaskCard(title: String, dueText: String) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(16.dp),
-
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.width(36.dp)
         ) {
             Checkbox(
                 checked = true,
                 onCheckedChange = null,
                 colors = CheckboxDefaults.colors(
-                    checkmarkColor = MaterialTheme.colorScheme.onPrimary,
-                    uncheckedColor = MaterialTheme.colorScheme.primary,
-                    checkedColor = MaterialTheme.colorScheme.primary
+                    checkmarkColor = MaterialTheme.colorScheme.primary,
+                    uncheckedColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    checkedColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-            )
-        }
-        Column(
-            modifier = Modifier.weight(6f)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-            )
-            Spacer(modifier = Modifier.size(4.dp))
-            Text(
-                text = dueText,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
             )
         }
         Column(
             modifier = Modifier.weight(1f)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
-                contentDescription = "arrow",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontSize = 14.sp,
             )
         }
     }
@@ -243,144 +313,331 @@ fun TaskCard(title: String, dueText: String) {
 }
 
 /**
- * Display user's plants
+ * Purpose: Displays a section showing the user's plants with their status
  */
 @Composable
-fun MyPlants(){
+fun MyGarden(
+    gardenPlants: List<UserPlantWithDetails?>,
+    gardenIsLoading: Boolean,
+    gardenError: String?,
+    onClickAdd: () -> Unit,
+    onClickView: (Long) -> Unit,
+    onClickSeeAll: () -> Unit,
+){
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .border(1.dp, MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(16.dp),
     ) {
-        // header
+        // Headline
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text(
-                text = "My Plants",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // card
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                .padding(16.dp),
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer)
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
+            Text(
+                text = "My Garden",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (gardenPlants.size > 3) {
+                TextButton (
+                    onClick = { onClickSeeAll() }
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_plant_placeholder),
-                        contentDescription = "Profile",
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.size(60.dp)
+                    Text(
+                        text = "See all",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            Column(
-                modifier = Modifier.weight(2f)
-            ) {
-                Column {
-                    Text(
-                        text = "Cherry Tomatoes",
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Planted: 21 days ago",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Growing well",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
         }
 
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            1.dp,
+            MaterialTheme.colorScheme.surfaceContainerLow
+        )
+
+        // Loading state
+        if (gardenIsLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        // Error state
+        else if (gardenError != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Error: $gardenError",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        // Empty state
+        else if (gardenPlants.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Button(
+                        modifier = Modifier.size(width = 250.dp, height = 50.dp),
+                        onClick = { onClickAdd() },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add plants",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Browse Plants",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = "Start adding plants to your garden",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+        // Content state - plant list
+        else {
+            // Display a limited number of plants
+            gardenPlants.take(3).forEach { userPlantWithDetails ->
+                GardenPlant(
+                    userPlantWithDetails = userPlantWithDetails,
+                    onItemClick = { userPlantWithDetails?.userPlant?.userPlantId?.let {
+                        onClickView(it)
+                    } }
+                )
+            }
+        }
     }
     Spacer(modifier = Modifier.height(24.dp))
 }
 
 /**
- * Display the newest community posts
+ * Purpose: A item in a list of the my plants
+ */
+@Composable
+private fun GardenPlant(
+    userPlantWithDetails: UserPlantWithDetails?,
+    onItemClick: () -> Unit,
+
+) {
+    val context = LocalContext.current
+    val userPlant = userPlantWithDetails?.userPlant
+
+    // Format last watered date with "time ago" format
+    val lastWateredText = userPlant?.lastWateredDate?.let { timestamp ->
+        val timeAgo = DateUtils.getRelativeTimeSpanString(
+            timestamp,
+            System.currentTimeMillis(),
+            DateUtils.MINUTE_IN_MILLIS
+        )
+        "Watered $timeAgo"
+    } ?: "Not watered yet"
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Row(
+        modifier = Modifier
+            .clickable { onItemClick() }
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(16.dp)),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Plant image
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            if (!userPlant?.imageUri.isNullOrEmpty()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(userPlant?.imageUri)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "User's plant image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_plant_placeholder),
+                        contentDescription = "Plant",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier
+                .weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Column {
+                Text(
+                    text = userPlantWithDetails?.userPlant?.nickname.toString(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 24.sp
+                )
+                // Watering info
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.WaterDrop,
+                        contentDescription = "Last watered",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = lastWateredText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .size(30.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
+                    contentDescription = "arrow",
+                    tint = MaterialTheme.colorScheme.outlineVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Purpose: Displays a section showing recent community posts and updates
  */
 @Composable
 fun CommunityUpdates(){
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .border(1.dp, MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(16.dp),
     ) {
-        // header
+        // Headline
         Row(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Community Updates",
+                text = "Recent Post",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
+                fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
+            Text(
+                text = "See all",
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
-        Spacer(modifier = Modifier.height(8.dp))
 
-        // card
+        // Post list
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                .padding(16.dp),
         ) {
-            Post("Get started with house plants")
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow
-            )
-            Post("Houseplant Care Tips")
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow
-            )
-            Post("15 Brilliant Plant Care Tips")
+            PostItem("Get started with house plants")
+            PostItem("Houseplant Care Tips")
+            PostItem("15 Brilliant Plant Care Tips")
         }
     }
     Spacer(modifier = Modifier.height(24.dp))
 }
 
+/**
+ * Purpose: Displays a single community post with user avatar and title
+ *
+ * @param title The title of the community post
+ */
 @Composable
-fun Post(title: String) {
-    Row {
+fun PostItem(title: String) {
+    HorizontalDivider(
+        modifier = Modifier.padding(vertical = 10.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    )
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Column(
-            modifier = Modifier.width(36.dp)
+            modifier = Modifier.width(36.dp),
         ) {
             Box(
                 modifier = Modifier
@@ -405,15 +662,16 @@ fun Post(title: String) {
             Column {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 14.sp,
+                    maxLines = 1,
                 )
                 Text(
-                    text = "View 3 comments",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.primary
+                    text = "3 days ago",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.outline,
+                    lineHeight = 12.sp,
                 )
             }
         }

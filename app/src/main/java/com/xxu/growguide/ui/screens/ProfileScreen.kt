@@ -3,7 +3,6 @@ package com.xxu.growguide.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,11 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -34,20 +31,40 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.xxu.growguide.R
+import com.xxu.growguide.auth.AuthManager
+import com.xxu.growguide.viewmodels.AuthViewModel
+import com.xxu.growguide.viewmodels.AuthViewModelFactory
 import com.xxu.growguide.viewmodels.ThemeViewModel
 
+/**
+ * Purpose: Displays the user profile screen with personal information and app settings
+ *
+ * @param navController Navigation controller for screen navigation
+ * @param innerPadding Padding values from the parent layout
+ * @param scrollState State object for handling scrolling behavior
+ * @param themeViewModel ViewModel that manages theme preferences
+ */
 @Composable
-fun ProfileScreen(navController: NavHostController, innerPadding: PaddingValues, scrollState: ScrollState, themeViewModel: ThemeViewModel){
+fun ProfileScreen(
+    navController: NavHostController,
+    innerPadding: PaddingValues,
+    scrollState: ScrollState,
+    themeViewModel: ThemeViewModel
+){
+    val authManager = AuthManager.getInstance(LocalContext.current.applicationContext)
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager))
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -56,11 +73,18 @@ fun ProfileScreen(navController: NavHostController, innerPadding: PaddingValues,
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         ProfileHeader()
-        ProfileBanner()
-        FrequentSettings(themeViewModel)
+        //ProfileBanner()
+        CommonSettings(themeViewModel)
+
+        LogOut(
+            onClick = { authViewModel.signOut() }
+        )
     }
 }
 
+/**
+ * Purpose: Provides a preview of the ProfileScreen for Android Studio design view
+ */
 @Composable
 @Preview(showBackground = true)
 fun ProfileScreenPreview() {
@@ -77,9 +101,8 @@ fun ProfileScreenPreview() {
     )
 }
 
-
 /**
- * Display the header of the screen
+ * Purpose: Displays the header section of the profile screen with title
  */
 @Composable
 fun ProfileHeader(){
@@ -95,7 +118,7 @@ fun ProfileHeader(){
             text = "My Profile",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
-            fontSize = 32.sp,
+            fontSize = 24.sp,
             color = MaterialTheme.colorScheme.onSurface
         )
     }
@@ -104,7 +127,7 @@ fun ProfileHeader(){
 
 
 /**
- * Profile banner
+ * Purpose: Displays the user's profile information including avatar, name, and location
  */
 @Composable
 fun ProfileBanner(){
@@ -116,7 +139,7 @@ fun ProfileBanner(){
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                 .padding(16.dp)
                 .height(150.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -136,7 +159,7 @@ fun ProfileBanner(){
                         modifier = Modifier.size(60.dp),
                         painter = painterResource(id = R.drawable.ic_profile),
                         contentDescription = "Plant Placeholder",
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onTertiaryContainer)
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer)
                     )
                 }
             }
@@ -174,14 +197,16 @@ fun ProfileBanner(){
 }
 
 /**
- * A list of the app settings
+ * Purpose: Displays a list of common settings and options for the user
+ *
+ * @param themeViewModel ViewModel that manages theme preferences
  */
 @Composable
-fun FrequentSettings(themeViewModel: ThemeViewModel) {
+fun CommonSettings(themeViewModel: ThemeViewModel) {
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         ThemeToggle(themeViewModel)
@@ -189,7 +214,7 @@ fun FrequentSettings(themeViewModel: ThemeViewModel) {
         HorizontalDivider(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             thickness = 1.dp,
-            color = MaterialTheme.colorScheme.surfaceContainer
+            color = MaterialTheme.colorScheme.surfaceContainerLow
         )
 
         LanguageSetting()
@@ -197,7 +222,7 @@ fun FrequentSettings(themeViewModel: ThemeViewModel) {
         HorizontalDivider(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             thickness = 1.dp,
-            color = MaterialTheme.colorScheme.surfaceContainer
+            color = MaterialTheme.colorScheme.surfaceContainerLow
         )
 
         AccountManagement()
@@ -205,26 +230,19 @@ fun FrequentSettings(themeViewModel: ThemeViewModel) {
         HorizontalDivider(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             thickness = 1.dp,
-            color = MaterialTheme.colorScheme.surfaceContainer
+            color = MaterialTheme.colorScheme.surfaceContainerLow
         )
 
         MoreSettings()
     }
 
     Spacer(modifier = Modifier.height(16.dp))
-
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        LogOut()
-    }
 }
 
 /**
- * A toggle for switching Light/Dark mode
+ * Purpose: Provides a toggle switch for changing between light and dark themes
+ *
+ * @param themeViewModel ViewModel that manages theme preferences
  */
 @Composable
 fun ThemeToggle(themeViewModel: ThemeViewModel) {
@@ -244,7 +262,7 @@ fun ThemeToggle(themeViewModel: ThemeViewModel) {
 }
 
 /**
- * language setting
+ * Purpose: Displays language selection option
  */
 @Composable
 fun LanguageSetting() {
@@ -269,7 +287,7 @@ fun LanguageSetting() {
 }
 
 /**
- * account management setting
+ * Purpose: Provides navigation to account management options
  */
 @Composable
 fun AccountManagement() {
@@ -290,7 +308,7 @@ fun AccountManagement() {
 }
 
 /**
- * more settings
+ * Purpose: Provides navigation to additional app settings
  */
 @Composable
 fun MoreSettings() {
@@ -311,22 +329,33 @@ fun MoreSettings() {
 }
 
 /**
- * log out setting
+ * Purpose: Provides option for user to log out of their account
  */
 @Composable
-fun LogOut() {
+fun LogOut( onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = "Log Out", Modifier.weight(1f))
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-            contentDescription = "Select language",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        Text(
+            text = "Log Out",
+            Modifier
+                .weight(1f)
+                .padding(start = 8.dp)
         )
+        IconButton(
+            onClick = onClick
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                contentDescription = "Select language",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
