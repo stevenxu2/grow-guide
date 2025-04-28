@@ -33,7 +33,7 @@ class WeatherManager(
      */
     fun getCurrentWeather(): Flow<WeatherData> = flow {
         // delay for demonstration
-        delay(1000)
+        // delay(1000)
 
         var cachedWeather: WeatherEntity? = null
         try {
@@ -57,7 +57,7 @@ class WeatherManager(
                 location = locationString
             )
 
-            // Cache the new data from database
+            // Cache the new data into database
             val weatherEntity = mapWeatherDataToEntity(freshWeather)
             weatherDao.insertWeather(weatherEntity)
 

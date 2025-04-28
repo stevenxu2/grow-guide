@@ -31,6 +31,7 @@ class AuthViewModel(
     val isLoggedIn = authManager.isLoggedIn
     val authError = authManager.authError
     val isLoading = authManager.isLoading
+    val isAnonymous = authManager.isAnonymous
 
     // User data
     val currentUser = authManager.currentUser
@@ -57,10 +58,24 @@ class AuthViewModel(
     }
 
     /**
+     * Purpose: Sign in anonymously
+     */
+    suspend fun signInAnonymously(): Boolean {
+        return authManager.signInAnonymously()
+    }
+
+    /**
      * Purpose: Sign up with email, password and display name
      */
     suspend fun signUp(email: String, password: String, displayName: String): Boolean {
         return authManager.signUp(email, password, displayName)
+    }
+
+    /**
+     * Purpose: Convert anonymous account to permanent account
+     */
+    suspend fun convertAnonymousAccount(email: String, password: String, displayName: String): Boolean {
+        return authManager.convertAnonymousUser(email, password, displayName)
     }
 
     /**
@@ -75,6 +90,11 @@ class AuthViewModel(
      */
     suspend fun getCurrentUser(): UserEntity? {
         return authManager.getCurrentUserFromDb()
+    }
+
+    fun clearErrors() {
+        authError.value = null
+        isLoading.value = false
     }
 }
 

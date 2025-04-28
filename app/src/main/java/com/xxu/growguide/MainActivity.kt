@@ -237,8 +237,6 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Purpose: Request location permissions from the user
-     *
-     * Launches the permission request dialog for both fine and coarse location
      */
     private fun requestLocationPermissions() {
         Log.d("LocationPermission", "Requesting location permissions")
@@ -263,7 +261,6 @@ class MainActivity : ComponentActivity() {
  * @param themeViewModel ViewModel that manages theme preferences
  * @param weatherViewModel ViewModel that provides weather data
  * @param plantsManager Manager class that handles fetching and caching plant data
- * @param plantDetailViewModel ViewModel that manages plant detail data
  * @param authViewModel ViewModel that handles authentication state
  */
 @Composable
@@ -297,9 +294,13 @@ fun App(
     val isLoggedIn by authViewModel.isLoggedIn
 
     // Check if we're on a detail screen that should hide navigation
-    val isHiddenNav = currentRoute?.startsWith("plant_detail") == true ||
-            currentRoute?.startsWith("add_plant") == true ||
-            currentRoute?.startsWith("garden_plant_detail") == true
+    val isHiddenNav = when {
+        showLoginDialog -> true
+        currentRoute?.startsWith("plant_detail") == true -> true
+        currentRoute?.startsWith("add_plant") == true -> true
+        currentRoute?.startsWith("garden_plant_detail") == true -> true
+        else -> false
+    }
 
     // Check if current screen requires authentication
     val requiresAuth = when {
@@ -327,16 +328,6 @@ fun App(
 
         // Hide the navigation bar for some screens
         bottomBar = {
-            // Only show bottom nav on main screens
-//            val showBottomNav = when (currentRoute) {
-//                Destination.Home.route,
-//                Destination.Plants.route,
-//                Destination.Community.route,
-//                Destination.Profile.route,
-//                Destination.Garden.route -> true
-//                else -> false
-//            }
-
             if (!isHiddenNav) {
                 BottomNav(navController = navController)
             }
@@ -368,6 +359,7 @@ fun App(
                         plantsManager = plantsManager
                     )
                 }
+
                 // Plant screen
                 composable(Destination.Plants.route) {
                     PlantsScreen(
@@ -383,6 +375,7 @@ fun App(
 //                        scrollState = scrollState
 //                    )
                 }
+
                 // Garden screen
                 composable(Destination.Garden.route) {
                     GardenScreen(
@@ -391,6 +384,7 @@ fun App(
                         plantsManager = plantsManager
                     )
                 }
+
                 // Community screen
                 composable(Destination.Community.route) {
                     CommunityScreen(
@@ -399,6 +393,7 @@ fun App(
                         scrollState
                     )
                 }
+
                 // Profile screen
                 composable(Destination.Profile.route) {
                     ProfileScreen(
@@ -408,6 +403,7 @@ fun App(
                         themeViewModel
                     )
                 }
+
                 // Add Plant screen
                 composable(
                     route = Destination.AddPlant.routeWithArgs,
@@ -424,6 +420,7 @@ fun App(
                         plantsManager = plantsManager
                     )
                 }
+
                 // Plant Detail screen
                 composable(
                     route = Destination.PlantDetail.routeWithArgs,
@@ -441,6 +438,7 @@ fun App(
                         plantsManager = plantsManager,
                     )
                 }
+
                 // Garden Plant screen
                 composable(
                     route = Destination.GardenPlantDetail.routeWithArgs,

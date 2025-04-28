@@ -268,7 +268,7 @@ fun GardenScreen(
             }
         }
 
-        // Delete confirmation dialog
+        // Watering dialog
         if (showWaterDialog && plantToWater != null) {
             AlertDialog(
                 onDismissRequest = {

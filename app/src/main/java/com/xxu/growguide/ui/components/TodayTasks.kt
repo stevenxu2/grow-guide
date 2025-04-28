@@ -16,6 +16,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
@@ -23,8 +26,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +64,12 @@ fun TodayTasks(
 
     // Limit to maximum 3 tasks on home screen
     val tasksToShow = tasks.take(3)
+
+    // State for confirmation dialog
+    var showWaterDialog by remember { mutableStateOf(false) }
+    var plantToWater: Long? by remember { mutableStateOf(null) }
+    var taskType: TaskType? by remember { mutableStateOf(null) }
+    var hasConfirmedDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -123,12 +135,57 @@ fun TodayTasks(
                 TaskCard(
                     task = task,
                     onClick = { onTaskClick(task.plantId) },
-                    onCheck = { onCheckTask(task.plantId, task.type) }
+                    onCheck = { isCheck: MutableState<Boolean> ->
+                        isCheck.value = hasConfirmedDialog
+                        showWaterDialog = true
+                        plantToWater = task.plantId
+                        taskType = task.type
+                    }
                 )
             }
         }
     }
     Spacer(modifier = Modifier.height(24.dp))
+
+    // Watering dialog
+    if (showWaterDialog && plantToWater != null) {
+        AlertDialog(
+            onDismissRequest = {
+                hasConfirmedDialog = false
+                showWaterDialog = false
+                plantToWater = null
+                taskType = null
+            },
+            title = { Text("Water Plant") },
+            text = { Text("Record that you've watered this plant today?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onCheckTask(plantToWater!!, taskType!!)
+                        hasConfirmedDialog = true
+                        showWaterDialog = false
+                        plantToWater = null
+                        taskType = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Yes, I watered it")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        hasConfirmedDialog = false
+                        showWaterDialog = false
+                        plantToWater = null
+                        taskType = null
+                    }
+                ) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        )
+    }
 }
 
 /**
@@ -272,7 +329,7 @@ fun generateTasks(plants: List<UserPlantWithDetails?>): List<PlantTask> {
 fun TaskCard(
     task: PlantTask,
     onClick: () -> Unit,
-    onCheck: () -> Unit
+    onCheck: (MutableState<Boolean>) -> Unit
 ) {
     val isChecked = remember { mutableStateOf(task.isCompleted) }
 
@@ -320,14 +377,15 @@ fun TaskCard(
             .clip(RoundedCornerShape(12.dp))
             .background(cardColor.copy(alpha = 0.1f))
 //            .clickable { onClick() }
+            .border(1.dp, cardColor.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
             checked = isChecked.value,
             onCheckedChange = {
-                isChecked.value = it
-                onCheck()
+                //isChecked.value = it
+                onCheck(isChecked)
             },
             colors = CheckboxDefaults.colors(
 //                checkedColor = iconTint,
@@ -357,7 +415,7 @@ fun TaskCard(
                 text = taskTitle,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

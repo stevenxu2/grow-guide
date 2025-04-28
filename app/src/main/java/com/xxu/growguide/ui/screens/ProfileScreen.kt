@@ -159,7 +159,7 @@ fun ProfileBanner(){
                         modifier = Modifier.size(60.dp),
                         painter = painterResource(id = R.drawable.ic_profile),
                         contentDescription = "Plant Placeholder",
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onTertiaryContainer)
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer)
                     )
                 }
             }

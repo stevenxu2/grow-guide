@@ -24,8 +24,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,7 +53,10 @@ import com.xxu.growguide.viewmodels.WeatherViewModel
  * @param weatherState Current UI state containing weather data or error information
  */
 @Composable
-fun WeatherCard(weatherViewModel: WeatherViewModel ,weatherState: WeatherUiState){
+fun WeatherCard(
+    weatherViewModel: WeatherViewModel,
+    weatherState: WeatherUiState
+){
     Log.i("GrowGuide", "${weatherState}")
     // Display content based on UI state
     when (weatherState) {
@@ -105,7 +111,16 @@ private fun WeatherContent(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.surfaceContainerLow,
+                        MaterialTheme.colorScheme.surfaceContainerLowest
+                    ),  // Replace with your desired colors
+                    start = Offset(0f, 0f),
+                    end = Offset(Float.POSITIVE_INFINITY, 0f)
+                )
+            )
             .border(1.dp, MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
             .padding(16.dp)
             .clickable { onRefresh() },

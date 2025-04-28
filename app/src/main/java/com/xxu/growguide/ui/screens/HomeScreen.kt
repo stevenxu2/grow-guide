@@ -40,6 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +62,8 @@ import com.xxu.growguide.R
 import com.xxu.growguide.api.PlantsManager
 import com.xxu.growguide.auth.AuthManager
 import com.xxu.growguide.destinations.Destination
+import com.xxu.growguide.ui.components.CompactAccountConversionReminder
+import com.xxu.growguide.ui.components.ConvertAccountDialog
 import com.xxu.growguide.ui.components.TaskType
 import com.xxu.growguide.ui.components.TodayTasks
 import com.xxu.growguide.ui.components.WeatherCard
@@ -102,6 +107,11 @@ fun HomeScreen(
     // Collect weather state from ViewModel
     val weatherState by weatherViewModel.weatherState.collectAsState()
 
+    // State for reminding guests to convert their account to permanent account
+    val isAnonymous by authViewModel.isAnonymous
+    var showCompactConvertRemind by remember { mutableStateOf(true) }
+    var showConvertDialog by remember { mutableStateOf(false) }
+
 
     // Fetch weather data when the screen is first displayed
     LaunchedEffect(Unit) {
@@ -125,8 +135,20 @@ fun HomeScreen(
     ) {
 
         HomeHeader(
-            displayName = currentUser.displayName.toString()
+            displayName = currentUser.displayName ?: ""
         )
+
+        // Show the compact account convert reminder
+        if(showCompactConvertRemind && isAnonymous){
+            CompactAccountConversionReminder(
+                onCreateAccount = {
+                    showConvertDialog = true
+                },
+                onDismiss = {
+                    showCompactConvertRemind = false
+                }
+            )
+        }
 
         WeatherCard(weatherViewModel, weatherState)
 
@@ -160,6 +182,18 @@ fun HomeScreen(
         )
 
         //CommunityUpdates()
+
+        // Show the Convert Account Dialog
+        if (showConvertDialog && isAnonymous) {
+            authViewModel.clearErrors()
+            ConvertAccountDialog(
+                onDismiss = { showConvertDialog = false },
+                onSuccess = {
+                    showConvertDialog = false
+                    showCompactConvertRemind = false
+                },
+            )
+        }
     }
 }
 
@@ -184,9 +218,8 @@ fun HomeHeader(
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = displayName,
+            text = displayName ?: "",
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
             fontSize = 26.sp,
             color = MaterialTheme.colorScheme.onSurface
         )
