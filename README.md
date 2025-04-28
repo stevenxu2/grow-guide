@@ -57,5 +57,5 @@ To run the app, you'll need to obtain API keys for:
 3. Update the API keys in `API.kt`
 4. Configure Firebase:
     - Add the `google-services.json` to your project 
-    - Enable **Email/Password** and **Anonymous** authentication in the Firebase Console under your project**Authentication → Sign-in method**
+    - Enable **Email/Password** and **Anonymous** authentication in the Firebase Console under your project **Authentication → Sign-in method**
 5. Build and run
